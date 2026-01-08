@@ -8,6 +8,7 @@ import { FeedManageModal, FeedInfoModal } from "~/components/FeedModals";
 import { ReaderView } from "./ReaderView";
 import { DiscoverView } from "./DiscoverView";
 import { SettingsModal } from "~/components/SettingsModal";
+import { Button } from "~/components/ui/Button";
 
 interface SidebarProps {
     onSelectFeed: (feed: Feed) => void;
@@ -233,41 +234,47 @@ export function Sidebar({
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
                                     onClick={() => setSettingsOpen(true)}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-[#0e3415] hover:bg-gray-100 transition-colors"
+                                    className="text-gray-400 hover:text-[#0e3415]"
                                 >
                                     <Settings size={16} />
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
                                     onClick={() => logout()}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                    className="text-gray-400 hover:text-red-600 hover:bg-red-50"
                                 >
                                     <LogOut size={16} />
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 gap-2">
-                            <button
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() =>
                                     setAuthModal({ open: true, view: "login" })
                                 }
-                                className="py-1.5 px-3 border border-gray-200 text-gray-700 text-xs font-medium rounded-md hover:border-[#587e5b] transition-colors"
                             >
                                 Sign In
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="sm"
                                 onClick={() =>
                                     setAuthModal({
                                         open: true,
                                         view: "register",
                                     })
                                 }
-                                className="py-1.5 px-3 bg-[#0e3415] text-white text-xs font-medium rounded-md hover:bg-[#587e5b] transition-colors"
                             >
                                 Register
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>

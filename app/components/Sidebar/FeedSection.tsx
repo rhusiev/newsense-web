@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Plus, Search, X } from "lucide-react";
 import type { Feed } from "~/lib/types";
 import { FeedItem } from "~/components/FeedItem";
+import { Button } from "~/components/ui/Button";
 
 interface FeedSectionProps {
     title: string;
@@ -31,7 +32,7 @@ export function FeedSection({
     onCreateFeed,
 }: FeedSectionProps) {
     const [isExpanded, setIsExpanded] = useState(
-        collapsible ? defaultExpanded : true
+        collapsible ? defaultExpanded : true,
     );
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -85,34 +86,40 @@ export function FeedSection({
 
                 <div className="flex items-center gap-1">
                     {(!collapsible || isExpanded) && (
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
                             onClick={toggleSearch}
-                            className={`flex items-center justify-center w-7 h-7 rounded-md transition-colors ${
+                            className={
                                 isSearchVisible
-                                    ? "text-[#587e5b] bg-[#587e5b]/10"
-                                    : "text-gray-400 hover:text-[#587e5b] hover:bg-gray-100"
-                            }`}
+                                    ? "text-[#587e5b] bg-[#587e5b]/10 hover:bg-[#587e5b]/20"
+                                    : "text-gray-400"
+                            }
                             title="Search"
                         >
                             <Search size={16} />
-                        </button>
+                        </Button>
                     )}
-                    
+
                     {onCreateFeed && (
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
                             onClick={handleCreateClick}
-                            className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-[#587e5b] hover:bg-gray-100 transition-colors"
+                            className="text-gray-400 hover:text-[#587e5b]"
                             title="Create New Feed"
                         >
                             <Plus size={18} />
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>
 
             <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out px-2 ${
-                    isSearchVisible ? "max-h-12 opacity-100 mb-3" : "max-h-0 opacity-0"
+                    isSearchVisible
+                        ? "max-h-12 opacity-100 mb-3"
+                        : "max-h-0 opacity-0"
                 }`}
             >
                 <div className="relative mx-2">
@@ -142,13 +149,13 @@ export function FeedSection({
 
             <div
                 className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
-                    isExpanded 
-                        ? "grid-rows-[1fr] opacity-100" 
+                    isExpanded
+                        ? "grid-rows-[1fr] opacity-100"
                         : "grid-rows-[0fr] opacity-0"
                 }`}
             >
                 <div className="overflow-hidden">
-                    <div className="mt-1 pb-1"> 
+                    <div className="mt-1 pb-1">
                         {feeds.map((feed) => (
                             <FeedItem
                                 key={feed.id}
@@ -164,7 +171,7 @@ export function FeedSection({
                                 onAction={onFeedAction}
                             />
                         ))}
-                        
+
                         {feeds.length === 0 && searchQuery && (
                             <p className="px-6 py-2 text-xs text-gray-500 font-medium italic text-center">
                                 No feeds match "{searchQuery}"

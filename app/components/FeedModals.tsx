@@ -1,14 +1,8 @@
 import { useState, useEffect } from "react";
-import {
-    X,
-    Globe,
-    Link as LinkIcon,
-    Lock,
-    Loader2,
-    Calendar,
-} from "lucide-react";
+import { X, Globe, Link as LinkIcon, Lock, Calendar } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
+import { Button } from "~/components/ui/Button";
 
 interface FeedInfoModalProps {
     feed: Feed | null;
@@ -29,12 +23,14 @@ export function FeedInfoModal({ feed, onClose }: FeedInfoModalProps) {
                     <h2 className="font-serif text-lg text-[#0e3415]">
                         Feed Information
                     </h2>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={onClose}
-                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        aria-label="Close"
                     >
                         <X size={18} />
-                    </button>
+                    </Button>
                 </div>
 
                 <div className="p-6 space-y-6 overflow-y-auto">
@@ -89,12 +85,9 @@ export function FeedInfoModal({ feed, onClose }: FeedInfoModalProps) {
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 text-gray-700 transition-colors"
-                    >
+                    <Button variant="outline" size="sm" onClick={onClose}>
                         Close
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>
@@ -186,12 +179,14 @@ export function FeedManageModal({
                             ? "Add New Feed"
                             : "Edit Feed Details"}
                     </h2>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={onClose}
-                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        aria-label="Close"
                     >
                         <X size={18} />
-                    </button>
+                    </Button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -264,23 +259,16 @@ export function FeedManageModal({
                     </div>
 
                     <div className="pt-4 flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors"
-                        >
+                        <Button type="button" variant="ghost" onClick={onClose}>
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            disabled={loading}
-                            className="px-4 py-2 bg-[#0e3415] text-white rounded-lg text-sm font-medium hover:bg-[#587e5b] flex items-center gap-2 transition-colors"
+                            variant="primary"
+                            isLoading={loading}
                         >
-                            {loading && (
-                                <Loader2 size={14} className="animate-spin" />
-                            )}
                             {mode === "create" ? "Add Feed" : "Save Changes"}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

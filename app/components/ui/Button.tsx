@@ -1,9 +1,10 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { Loader2 } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: "primary" | "secondary" | "ghost" | "danger" | "outline";
-    size?: "sm" | "md" | "lg" | "icon";
+    size?: "sm" | "md" | "lg" | "icon" | "icon-sm";
     isLoading?: boolean;
 }
 
@@ -20,29 +21,37 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref,
     ) => {
         const baseStyles =
-            "inline-flex items-center justify-center rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none";
+            "inline-flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0e3415] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
 
         const variants = {
-            primary: "bg-brand-950 text-white hover:bg-brand-600",
-            secondary: "bg-brand-50 text-brand-950 hover:bg-brand-100",
+            primary:
+                "bg-[#0e3415] text-white hover:bg-[#587e5b] shadow-sm border border-transparent",
+            secondary:
+                "bg-[#eef5ef] text-[#0e3415] hover:bg-[#dcebdd] border border-transparent",
             outline:
-                "border border-gray-200 bg-white text-gray-700 hover:border-brand-300 hover:text-brand-600",
-            ghost: "text-gray-600 hover:bg-gray-100 hover:text-brand-950",
-            danger: "text-red-600 hover:bg-red-50",
+                "border border-gray-200 bg-white text-gray-700 hover:border-[#587e5b] hover:text-[#0e3415]",
+            ghost: "text-gray-500 hover:bg-gray-100 hover:text-[#0e3415] bg-transparent",
+            danger: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
         };
 
         const sizes = {
-            sm: "px-3 py-1.5 text-xs",
-            md: "px-4 py-2 text-sm",
-            lg: "px-6 py-3 text-base",
-            icon: "p-2",
+            sm: "h-8 px-3 text-xs",
+            md: "h-9 px-4 py-2 text-sm",
+            lg: "h-11 px-8 text-base",
+            icon: "h-9 w-9 p-0",
+            "icon-sm": "h-7 w-7 p-0",
         };
 
         return (
             <button
                 ref={ref}
-                className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-                disabled={isLoading}
+                className={cn(
+                    baseStyles,
+                    variants[variant],
+                    sizes[size],
+                    className,
+                )}
+                disabled={isLoading || props.disabled}
                 {...props}
             >
                 {isLoading && (
@@ -53,5 +62,4 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         );
     },
 );
-
 Button.displayName = "Button";
