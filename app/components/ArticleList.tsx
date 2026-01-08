@@ -1,278 +1,130 @@
-import { useEffect, useState } from "react";
-import {
-    Calendar,
-    Check,
-    Circle,
-    ThumbsUp,
-    ThumbsDown,
-    RefreshCw,
-} from "lucide-react";
+import { useEffect, useState, useRef, useCallback, useLayoutEffect } from "react";
+import { Calendar, Check, Circle, RefreshCw, Filter, CheckCheck, Loader2, RotateCw } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Feed, Item } from "~/lib/types";
 
-export function ArticleList({
-    feed,
-    refreshKey,
-}: {
-    feed: Feed | null;
-    refreshKey?: number;
-}) {
+export function ArticleList({ feed, refreshKey, feedMap, onItemRead, triggerConfirm, onError }: any) {
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [unreadOnly, setUnreadOnly] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const lastScrollHeight = useRef<number>(0);
 
-    useEffect(() => {
-        if (!feed) {
-            setItems([]);
-            return;
+    // Maintain scroll position when new items are prepended
+    useLayoutEffect(() => {
+        if (scrollRef.current && lastScrollHeight.current > 0) {
+            const diff = scrollRef.current.scrollHeight - lastScrollHeight.current;
+            scrollRef.current.scrollTop += diff;
+            lastScrollHeight.current = 0;
         }
+    }, [items]);
 
+    const loadItems = useCallback(async () => {
+        if (!feed) return;
         setLoading(true);
-
-        let fetchPromise;
-        if (feed.id === "all") {
-            fetchPromise = api.getAllItems();
-        } else if (feed.id === "unread") {
-            fetchPromise = api.getAllItems();
-        } else {
-            fetchPromise = api.getFeedItems(feed.id);
+        try {
+            const params = { limit: 20, unread_only: unreadOnly };
+            const data = feed.id === "all" ? await api.getAllItems(params) : await api.getFeedItems(feed.id, params);
+            setItems(data);
+            setHasMore(data.length === 20);
+        } catch (err: any) {
+            onError("Failed to load articles.");
+        } finally {
+            setLoading(false);
         }
+    }, [feed, unreadOnly, onError]);
 
-        fetchPromise
-            .then((data) => {
-                if (feed.id === "unread") {
-                    setItems(data.filter((item: Item) => !item.is_read));
-                } else {
-                    setItems(data);
+    const handleSync = async () => {
+        if (!feed || isSyncing) return;
+        setIsSyncing(true);
+        try {
+            const params = { limit: 20, unread_only: unreadOnly };
+            const newData: Item[] = feed.id === "all" ? await api.getAllItems(params) : await api.getFeedItems(feed.id, params);
+            
+            setItems(prev => {
+                const existingIds = new Set(prev.map(i => i.id));
+                const unique = newData.filter(i => !existingIds.has(i.id));
+                if (unique.length > 0 && scrollRef.current) {
+                    lastScrollHeight.current = scrollRef.current.scrollHeight;
+                    return [...unique, ...prev];
                 }
-            })
-            .catch((err) => console.error(err))
-            .finally(() => setLoading(false));
-    }, [feed, refreshKey]);
-
-    const toggleRead = (e: React.MouseEvent, item: Item) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const newStatus = !item.is_read;
-
-        setItems((prev) =>
-            prev.map((i) =>
-                i.id === item.id ? { ...i, is_read: newStatus } : i,
-            ),
-        );
-        api.updateItemStatus(item.id, { is_read: newStatus });
+                return prev;
+            });
+        } catch (e) {
+            onError("Sync failed.");
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
-    const handleReaction = (
-        e: React.MouseEvent,
-        item: Item,
-        type: "like" | "dislike",
-    ) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const value = type === "like" ? 1.0 : -1.0;
-        const newValue = item.liked === value ? 0.0 : value;
-
-        const shouldMarkRead = newValue !== 0.0 ? true : item.is_read;
-
-        setItems((prev) =>
-            prev.map((i) =>
-                i.id === item.id
-                    ? { ...i, liked: newValue, is_read: shouldMarkRead }
-                    : i,
-            ),
-        );
-
-        api.updateItemStatus(item.id, {
-            liked: newValue,
-            is_read: shouldMarkRead,
-        });
-    };
-
-    if (!feed) {
-        return (
-            <div className="flex-1 h-full flex items-center justify-center text-gray-300 bg-[#f8f9fa]">
-                <div className="text-center">
-                    <p className="text-lg font-serif italic text-gray-400">
-                        Select a feed to start reading
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    useEffect(() => { loadItems(); }, [loadItems, refreshKey]);
 
     return (
-        <div className="flex-1 h-full flex flex-col bg-[#fcfdfc] relative">
+        <div className="flex-1 h-full flex flex-col bg-[#fcfdfc]">
             <div className="px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10 flex justify-between items-start">
-                <div>
-                    <h1 className="text-2xl font-serif text-[#0e3415] mb-2">
-                        {feed.title || "Untitled Feed"}
-                    </h1>
-                    <p className="text-sm text-gray-500 line-clamp-1 max-w-2xl">
-                        {feed.description ||
-                            (feed.id === "all" || feed.id === "unread"
-                                ? "Aggregated view of your subscriptions"
-                                : feed.url)}
-                    </p>
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl font-serif text-[#0e3415] mb-1 truncate">{feed?.title || "Feed"}</h1>
+                    <p className="text-sm text-gray-400">{feed?.id === "all" ? "All subscriptions" : feed?.url}</p>
                 </div>
-                {loading && (
-                    <RefreshCw
-                        className="animate-spin text-[#587e5b]"
-                        size={20}
-                    />
-                )}
+                <div className="flex items-center gap-2">
+                    <button onClick={handleSync} className="p-2 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <RotateCw size={18} className={isSyncing ? "animate-spin" : ""} />
+                    </button>
+                    <button onClick={() => setUnreadOnly(!unreadOnly)} className={`p-2 border rounded-lg text-sm font-medium ${unreadOnly ? "bg-[#eef5ef] text-[#0e3415]" : "bg-white"}`}>
+                        <Filter size={16} />
+                    </button>
+                    <button 
+                        onClick={() => triggerConfirm({
+                            title: "Mark All Read",
+                            message: "Mark all items in this view as read?",
+                            onConfirm: async () => {
+                                try {
+                                    const since = "1970-01-01T00:00:00Z";
+                                    feed.id === "all" ? await api.markAllRead(since) : await api.markFeedRead(feed.id, since);
+                                    loadItems();
+                                    onItemRead();
+                                } catch (e) { onError("Action failed."); }
+                            }
+                        })}
+                        className="p-2 border rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2"
+                    >
+                        <CheckCheck size={16} />
+                        <span className="hidden sm:inline">Mark All Read</span>
+                    </button>
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
-                {loading && items.length === 0 ? (
-                    <div className="animate-pulse space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className="h-40 bg-gray-100 rounded-xl"
-                            ></div>
-                        ))}
-                    </div>
-                ) : items.length === 0 ? (
-                    <div className="text-center py-20 text-gray-400">
-                        No articles found.
-                    </div>
-                ) : (
-                    items.map((item) => (
-                        <article
-                            key={item.id}
-                            className={`group relative bg-white border border-gray-100 rounded-xl p-6 shadow-sm transition-all hover:shadow-md hover:border-[#9ac39d]/50 ${item.is_read ? "opacity-60 bg-gray-50/50" : ""}`}
-                        >
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-2 text-xs text-gray-400 font-medium uppercase tracking-wider">
-                                    <span className="text-[#587e5b]">
-                                        {feed.id === "all"
-                                            ? "Subscription"
-                                            : feed.title}
-                                    </span>
-                                    <span>•</span>
-                                    <span className="flex items-center gap-1">
-                                        <Calendar size={12} />
-                                        {item.published_at
-                                            ? new Date(
-                                                  item.published_at,
-                                              ).toLocaleString([], {
-                                                  year: "numeric",
-                                                  month: "numeric",
-                                                  day: "numeric",
-                                                  hour: "2-digit",
-                                                  minute: "2-digit",
-                                              })
-                                            : "Unknown"}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) =>
-                                            handleReaction(e, item, "like")
-                                        }
-                                        className={`p-1.5 rounded-full transition-colors ${
-                                            item.liked === 1.0
-                                                ? "text-green-600 bg-green-50"
-                                                : "text-gray-300 hover:text-green-600 hover:bg-gray-50"
-                                        }`}
-                                        title="Like"
-                                    >
-                                        <ThumbsUp
-                                            size={16}
-                                            fill={
-                                                item.liked === 1.0
-                                                    ? "currentColor"
-                                                    : "none"
-                                            }
-                                        />
-                                    </button>
-
-                                    <button
-                                        onClick={(e) =>
-                                            handleReaction(e, item, "dislike")
-                                        }
-                                        className={`p-1.5 rounded-full transition-colors ${
-                                            item.liked === -1.0
-                                                ? "text-red-500 bg-red-50"
-                                                : "text-gray-300 hover:text-red-500 hover:bg-gray-50"
-                                        }`}
-                                        title="Dislike"
-                                    >
-                                        <ThumbsDown
-                                            size={16}
-                                            fill={
-                                                item.liked === -1.0
-                                                    ? "currentColor"
-                                                    : "none"
-                                            }
-                                        />
-                                    </button>
-
-                                    <button
-                                        onClick={(e) => toggleRead(e, item)}
-                                        className={`p-1.5 rounded-full transition-colors ml-1 ${
-                                            item.is_read
-                                                ? "text-[#587e5b] bg-[#eef5ef]"
-                                                : "text-gray-300 hover:bg-gray-100 hover:text-gray-500"
-                                        }`}
-                                        title={
-                                            item.is_read
-                                                ? "Mark as unread"
-                                                : "Mark as read"
-                                        }
-                                    >
-                                        {item.is_read ? (
-                                            <Check size={16} />
-                                        ) : (
-                                            <Circle size={16} />
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <a
-                                href={item.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block group-hover:text-[#0e3415]"
-                                onClick={() => {
-                                    if (!item.is_read) {
-                                        api.updateItemStatus(item.id, {
-                                            is_read: true,
-                                        });
-                                        setItems((prev) =>
-                                            prev.map((i) =>
-                                                i.id === item.id
-                                                    ? { ...i, is_read: true }
-                                                    : i,
-                                            ),
-                                        );
-                                    }
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6">
+                {items.map((item) => (
+                    <article key={item.id} className={`bg-white border border-gray-100 rounded-xl p-6 shadow-sm ${item.is_read ? "opacity-50" : ""}`}>
+                        <div className="flex justify-between items-start mb-3">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#587e5b]">
+                                {feedMap.get(item.feed_id) || "Subscription"}
+                            </span>
+                            <button 
+                                onClick={async () => {
+                                    try { 
+                                        await api.updateItemStatus(item.id, { is_read: !item.is_read }); 
+                                        setItems(prev => prev.map(i => i.id === item.id ? {...i, is_read: !i.is_read} : i));
+                                        onItemRead();
+                                    } catch (e) { onError("Failed to update status"); }
                                 }}
+                                className="text-gray-300 hover:text-[#587e5b]"
                             >
-                                <h2 className="text-xl font-semibold text-gray-800 mb-3 leading-tight group-hover:underline decoration-[#9ac39d] decoration-2 underline-offset-4">
-                                    {item.title}
-                                </h2>
-                            </a>
-
-                            <div className="text-gray-600 leading-relaxed text-sm mb-4 line-clamp-3">
-                                {item.content
-                                    ? item.content
-                                          .replace(/<[^>]*>?/gm, "")
-                                          .substring(0, 300) + "..."
-                                    : ""}
-                            </div>
-
-                            <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-50">
-                                <span className="text-xs text-gray-400 italic">
-                                    {item.author ? `By ${item.author}` : ""}
-                                </span>
-                            </div>
-                        </article>
-                    ))
-                )}
+                                {item.is_read ? <Check size={18} /> : <Circle size={18} />}
+                            </button>
+                        </div>
+                        <a href={item.link} target="_blank" rel="noreferrer" className="block text-xl font-semibold mb-2 hover:underline decoration-[#9ac39d]">
+                            {item.title}
+                        </a>
+                        <div className="text-gray-600 text-sm line-clamp-2">
+                            {item.content?.replace(/<[^>]*>?/gm, "").substring(0, 200)}...
+                        </div>
+                    </article>
+                ))}
             </div>
         </div>
     );

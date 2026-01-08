@@ -6,7 +6,6 @@ export interface Feed {
     description: string | null;
     is_public: boolean;
     created_at: string;
-    // Note: API doesn't currently return unread_count, adding client-side placeholder
     unread_count?: number;
 }
 
@@ -25,4 +24,12 @@ export interface Item {
 export interface User {
     user_id: string;
     username: string;
+}
+
+export interface UnreadCountResponse {
+    total_unread: number;
+    feeds: {
+        feed_id: string;
+        unread_count: number;
+    }[];
 }

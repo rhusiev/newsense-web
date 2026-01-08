@@ -1,33 +1,11 @@
 import { useState, useMemo } from "react";
-import { Layers, Inbox } from "lucide-react";
 import type { Feed } from "~/lib/types";
 import { FeedSection } from "./FeedSection";
-
-const ALL_ARTICLES_FEED: Feed = {
-    id: "all",
-    owner_id: null,
-    url: "",
-    title: "All Articles",
-    description: "Aggregated items from all subscriptions",
-    is_public: false,
-    created_at: new Date().toISOString(),
-    unread_count: 0,
-};
-
-const UNREAD_ARTICLES_FEED: Feed = {
-    id: "unread",
-    owner_id: null,
-    url: "",
-    title: "Unread Articles",
-    description: "Only items you haven't read yet",
-    is_public: false,
-    created_at: new Date().toISOString(),
-    unread_count: 0,
-};
 
 interface ReaderViewProps {
     subscribed: Feed[];
     owned: Feed[];
+    totalUnread: number;
     selectedFeedId: string | null;
     checkIsSubscribed: (feedId: string) => boolean;
     onSelectFeed: (feed: Feed) => void;
@@ -38,6 +16,7 @@ interface ReaderViewProps {
 export function ReaderView({
     subscribed,
     owned,
+    totalUnread,
     selectedFeedId,
     checkIsSubscribed,
     onSelectFeed,
@@ -46,6 +25,22 @@ export function ReaderView({
 }: ReaderViewProps) {
     const [subscribedFilter, setSubscribedFilter] = useState("");
     const [ownedFilter, setOwnedFilter] = useState("");
+
+    const virtualFeeds: Feed[] = useMemo(
+        () => [
+            {
+                id: "all",
+                owner_id: null,
+                url: "",
+                title: "All Articles",
+                description: "Aggregated items from all subscriptions",
+                is_public: false,
+                created_at: new Date().toISOString(),
+                unread_count: totalUnread,
+            },
+        ],
+        [totalUnread],
+    );
 
     const filteredSubscribed = useMemo(
         () =>
@@ -61,14 +56,11 @@ export function ReaderView({
         const list = [...filteredSubscribed];
         const search = subscribedFilter.toLowerCase();
 
-        if ("unread articles".includes(search)) {
-            list.unshift(UNREAD_ARTICLES_FEED);
-        }
         if ("all articles".includes(search)) {
-            list.unshift(ALL_ARTICLES_FEED);
+            list.unshift(virtualFeeds[0]);
         }
         return list;
-    }, [filteredSubscribed, subscribedFilter]);
+    }, [filteredSubscribed, subscribedFilter, virtualFeeds]);
 
     const filteredOwned = useMemo(
         () =>

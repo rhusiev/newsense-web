@@ -28,7 +28,6 @@ async function fetchClient(url: string, options: RequestInit = {}) {
 
 export const api = {
     me: (headers?: HeadersInit) => fetchClient(`${AUTH_URL}/me`, { headers }),
-
     login: (data: any) =>
         fetchClient(`${AUTH_URL}/login`, {
             method: "POST",
@@ -67,10 +66,44 @@ export const api = {
     getFeedSubscribers: (id: string) =>
         fetchClient(`${FEEDS_URL}/feeds/${id}/subscribers/count`),
 
-    getFeedItems: (feedId: string) =>
-        fetchClient(`${ITEMS_URL}/feeds/${feedId}/items`),
+    getUnreadCounts: () => fetchClient(`${ITEMS_URL}/items/unread-counts`),
 
-    getAllItems: () => fetchClient(`${ITEMS_URL}/items`),
+    markAllRead: (since: string) =>
+        fetchClient(`${ITEMS_URL}/items/mark-read`, {
+            method: "POST",
+            body: JSON.stringify({ since }),
+        }),
+
+    markFeedRead: (feedId: string, since: string) =>
+        fetchClient(`${ITEMS_URL}/feeds/${feedId}/items/mark-read`, {
+            method: "POST",
+            body: JSON.stringify({ since }),
+        }),
+
+    getFeedItems: (
+        feedId: string,
+        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.before) query.append("before", params.before);
+        if (params.unread_only) query.append("unread_only", "true");
+        if (params.limit) query.append("limit", params.limit.toString());
+
+        return fetchClient(
+            `${ITEMS_URL}/feeds/${feedId}/items?${query.toString()}`,
+        );
+    },
+
+    getAllItems: (
+        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.before) query.append("before", params.before);
+        if (params.unread_only) query.append("unread_only", "true");
+        if (params.limit) query.append("limit", params.limit.toString());
+
+        return fetchClient(`${ITEMS_URL}/items?${query.toString()}`);
+    },
 
     updateItemStatus: (
         itemId: string,
@@ -79,11 +112,5 @@ export const api = {
         fetchClient(`${ITEMS_URL}/items/${itemId}/status`, {
             method: "PUT",
             body: JSON.stringify(status),
-        }),
-
-    markRead: (itemId: string) =>
-        fetchClient(`${ITEMS_URL}/items/${itemId}/status`, {
-            method: "PUT",
-            body: JSON.stringify({ is_read: true }),
         }),
 };
