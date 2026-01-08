@@ -45,7 +45,7 @@ export function ArticleItem({
                         href={item.link}
                         target="_blank"
                         rel="noreferrer"
-                        className="block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-brand-300 decoration-2 underline-offset-2"
+                        className="w-fit block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-brand-300 decoration-2 underline-offset-2"
                     >
                         {item.title}
                     </a>
