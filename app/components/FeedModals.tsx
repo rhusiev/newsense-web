@@ -31,7 +31,7 @@ export function FeedInfoModal({ feed, onClose }: FeedInfoModalProps) {
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                     >
                         <X size={18} />
                     </button>
@@ -91,7 +91,7 @@ export function FeedInfoModal({ feed, onClose }: FeedInfoModalProps) {
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700"
+                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 text-gray-700 transition-colors"
                     >
                         Close
                     </button>
@@ -188,7 +188,7 @@ export function FeedManageModal({
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                     >
                         <X size={18} />
                     </button>
@@ -267,7 +267,7 @@ export function FeedManageModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium"
+                            className="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors"
                         >
                             Cancel
                         </button>

@@ -44,9 +44,7 @@ export function FeedItem({
             const hostname = new URL(feed.url).hostname;
             faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
         }
-    } catch (e) {
-        // remains null
-    }
+    } catch (e) {}
 
     const handleMenuToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -54,7 +52,7 @@ export function FeedItem({
             const rect = buttonRef.current.getBoundingClientRect();
             setMenuCoords({
                 top: rect.bottom + window.scrollY + 5,
-                left: rect.right - 192, // 192px = w-48
+                left: rect.right - 192,
             });
         }
         setMenuOpen(!menuOpen);
@@ -119,7 +117,7 @@ export function FeedItem({
                     <button
                         ref={buttonRef}
                         onClick={handleMenuToggle}
-                        className={`text-gray-600 hover:text-[#0e3415] p-0.5 rounded-md hover:bg-black/5 ${isSelected ? "flex" : "hidden group-hover:flex"} items-center justify-center`}
+                        className={`text-gray-600 hover:text-[#0e3415] p-0.5 rounded-md hover:bg-black/5 ${isSelected ? "flex" : "hidden group-hover:flex"} items-center justify-center transition-colors`}
                     >
                         <MoreHorizontal size={18} />
                     </button>
@@ -140,42 +138,46 @@ export function FeedItem({
                             }}
                             className="fixed z-[101] w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 text-sm overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                         >
-                            <button
-                                onClick={(e) =>
-                                    handleMenuAction(
-                                        e,
-                                        alreadySubscribed
-                                            ? "unsubscribe"
-                                            : "subscribe",
-                                    )
-                                }
-                                className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium"
-                            >
-                                {alreadySubscribed ? (
-                                    <Minus size={14} />
-                                ) : (
-                                    <Plus size={14} />
-                                )}
-                                {alreadySubscribed
-                                    ? "Unsubscribe"
-                                    : "Subscribe"}
-                            </button>
+                            {!isVirtual && (
+                                <button
+                                    onClick={(e) =>
+                                        handleMenuAction(
+                                            e,
+                                            alreadySubscribed
+                                                ? "unsubscribe"
+                                                : "subscribe",
+                                        )
+                                    }
+                                    className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium transition-colors"
+                                >
+                                    {alreadySubscribed ? (
+                                        <Minus size={14} />
+                                    ) : (
+                                        <Plus size={14} />
+                                    )}
+                                    {alreadySubscribed
+                                        ? "Unsubscribe"
+                                        : "Subscribe"}
+                                </button>
+                            )}
 
                             <button
                                 onClick={(e) =>
                                     handleMenuAction(e, "mark_read")
                                 }
-                                className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium"
+                                className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium transition-colors"
                             >
                                 <CheckCircle size={14} /> Mark all read
                             </button>
 
-                            <button
-                                onClick={(e) => handleMenuAction(e, "info")}
-                                className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium"
-                            >
-                                <Info size={14} /> Feed Info
-                            </button>
+                            {!isVirtual && (
+                                <button
+                                    onClick={(e) => handleMenuAction(e, "info")}
+                                    className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium transition-colors"
+                                >
+                                    <Info size={14} /> Feed Info
+                                </button>
+                            )}
 
                             {type === "owned" && (
                                 <>
@@ -184,7 +186,7 @@ export function FeedItem({
                                         onClick={(e) =>
                                             handleMenuAction(e, "edit")
                                         }
-                                        className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium"
+                                        className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-gray-800 font-medium transition-colors"
                                     >
                                         <Edit size={14} /> Edit Feed
                                     </button>
@@ -192,7 +194,7 @@ export function FeedItem({
                                         onClick={(e) =>
                                             handleMenuAction(e, "delete")
                                         }
-                                        className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-red-50 text-red-600 text-left font-medium"
+                                        className="flex w-full items-center gap-2 px-4 py-2.5 hover:bg-red-50 text-red-600 text-left font-medium transition-colors"
                                     >
                                         <Trash2 size={14} /> Delete Feed
                                     </button>

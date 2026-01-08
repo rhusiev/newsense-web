@@ -12,7 +12,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     const cookie = request.headers.get("Cookie");
     try {
         const response = await fetch(`${AUTH_API_URL}/me`, {
-            headers: { Cookie: cookie || "", "Content-Type": "application/json" },
+            headers: {
+                Cookie: cookie || "",
+                "Content-Type": "application/json",
+            },
         });
         if (!response.ok) return { user: null };
         const user = await response.json();
@@ -26,7 +29,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-    // Safety check for the crash
     const user = loaderData?.user ?? null;
 
     return (
@@ -43,7 +45,6 @@ function HomeContent() {
     const [error, setError] = useState<string | null>(null);
     const [allFeeds, setAllFeeds] = useState<Feed[]>([]);
 
-    // Confirmation Modal State
     const [confirmConfig, setConfirmConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -52,14 +53,16 @@ function HomeContent() {
         onConfirm: () => void;
     }>({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
-    const triggerConfirm = useCallback((config: Omit<typeof confirmConfig, "isOpen">) => {
-        setConfirmConfig({ ...config, isOpen: true });
-    }, []);
+    const triggerConfirm = useCallback(
+        (config: Omit<typeof confirmConfig, "isOpen">) => {
+            setConfirmConfig({ ...config, isOpen: true });
+        },
+        [],
+    );
 
-    // Map to look up feed titles by ID for the "All Articles" view
     const feedMap = useMemo(() => {
         const map = new Map<string, string>();
-        allFeeds.forEach(f => map.set(f.id, f.title || "Untitled Feed"));
+        allFeeds.forEach((f) => map.set(f.id, f.title || "Untitled Feed"));
         return map;
     }, [allFeeds]);
 
@@ -85,18 +88,22 @@ function HomeContent() {
                 <ArticleList
                     feed={selectedFeed}
                     refreshKey={refreshKey}
-                    onItemRead={() => setSidebarRefreshTrigger(p => p + 1)}
+                    onItemRead={() => setSidebarRefreshTrigger((p) => p + 1)}
                     feedMap={feedMap}
                     triggerConfirm={triggerConfirm}
                     onError={setError}
                 />
             </main>
 
-            <CustomConfirmModal 
-                {...confirmConfig} 
-                onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))} 
+            <CustomConfirmModal
+                {...confirmConfig}
+                onClose={() =>
+                    setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+                }
             />
-            {error && <ErrorToast message={error} onClose={() => setError(null)} />}
+            {error && (
+                <ErrorToast message={error} onClose={() => setError(null)} />
+            )}
         </div>
     );
 }

@@ -166,9 +166,9 @@ export function Sidebar({
                     <div className="flex gap-4">
                         <button
                             disabled={!user}
-                            className={`p-2 rounded-full transition-colors relative
+                            className={`p-2 rounded-lg transition-colors relative
                                 ${mode === "reader" ? "bg-[#eef5ef] text-[#0e3415]" : "text-gray-400"} 
-                                ${!user ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-50"}
+                                ${!user ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"}
                             `}
                             onClick={() => setMode("reader")}
                             title={
@@ -181,7 +181,7 @@ export function Sidebar({
                             )}
                         </button>
                         <button
-                            className={`p-2 rounded-full transition-colors ${mode === "discover" ? "bg-[#eef5ef] text-[#0e3415]" : "text-gray-400 hover:text-[#0e3415]"}`}
+                            className={`p-2 rounded-lg transition-colors ${mode === "discover" ? "bg-[#eef5ef] text-[#0e3415]" : "text-gray-400 hover:text-[#0e3415] hover:bg-gray-100"}`}
                             onClick={() => setMode("discover")}
                             title="Discover"
                         >
@@ -232,16 +232,16 @@ export function Sidebar({
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-1">
                                 <button
                                     onClick={() => setSettingsOpen(true)}
-                                    className="p-1.5 text-gray-400 hover:text-[#0e3415] transition-colors"
+                                    className="p-2 rounded-lg text-gray-400 hover:text-[#0e3415] hover:bg-gray-100 transition-colors"
                                 >
                                     <Settings size={16} />
                                 </button>
                                 <button
                                     onClick={() => logout()}
-                                    className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                                 >
                                     <LogOut size={16} />
                                 </button>
@@ -253,7 +253,7 @@ export function Sidebar({
                                 onClick={() =>
                                     setAuthModal({ open: true, view: "login" })
                                 }
-                                className="py-1.5 px-3 border border-gray-200 text-gray-700 text-xs font-medium rounded-md hover:border-[#587e5b]"
+                                className="py-1.5 px-3 border border-gray-200 text-gray-700 text-xs font-medium rounded-md hover:border-[#587e5b] transition-colors"
                             >
                                 Sign In
                             </button>
@@ -264,7 +264,7 @@ export function Sidebar({
                                         view: "register",
                                     })
                                 }
-                                className="py-1.5 px-3 bg-[#0e3415] text-white text-xs font-medium rounded-md hover:bg-[#587e5b]"
+                                className="py-1.5 px-3 bg-[#0e3415] text-white text-xs font-medium rounded-md hover:bg-[#587e5b] transition-colors"
                             >
                                 Register
                             </button>
