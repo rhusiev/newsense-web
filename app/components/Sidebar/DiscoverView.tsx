@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
 import { FeedItem } from "~/components/FeedItem";
+import { SearchInput } from "../ui/SearchInput";
+import { EmptyState } from "../ui/EmptyState";
 
 interface DiscoverViewProps {
     selectedFeedId: string | null;
@@ -17,57 +18,66 @@ export function DiscoverView({
     onSelectFeed,
     onFeedAction,
 }: DiscoverViewProps) {
-    const [discoverQuery, setDiscoverQuery] = useState("");
+    const [query, setQuery] = useState("");
     const [publicFeeds, setPublicFeeds] = useState<Feed[]>([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (discoverQuery.length > 2) {
-            const timer = setTimeout(
-                () => api.searchFeeds(discoverQuery).then(setPublicFeeds),
-                500,
-            );
+        if (query.length > 2) {
+            setLoading(true);
+            const timer = setTimeout(() => {
+                api.searchFeeds(query)
+                    .then(setPublicFeeds)
+                    .catch(() => setPublicFeeds([]))
+                    .finally(() => setLoading(false));
+            }, 500);
             return () => clearTimeout(timer);
-        } else if (discoverQuery.length === 0) {
+        } else if (query.length === 0) {
             setPublicFeeds([]);
         }
-    }, [discoverQuery]);
+    }, [query]);
 
     return (
-        <div className="px-4 animate-in fade-in duration-300">
-            <div className="relative mb-6">
-                <Search
-                    className="absolute left-3 top-2.5 text-gray-400"
-                    size={18}
-                />
-                <input
-                    type="text"
-                    placeholder="Find public feeds..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-[#587e5b] text-sm"
-                    value={discoverQuery}
-                    onChange={(e) => setDiscoverQuery(e.target.value)}
-                    autoFocus
+        <div className="flex flex-col h-full animate-in fade-in duration-300">
+            <div className="px-6 pt-2 pb-4 shrink-0">
+                <SearchInput
+                    placeholder="Search for new feeds..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onClear={() => setQuery("")}
                 />
             </div>
 
-            <div className="space-y-1 mt-4">
-                <p className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Results
-                </p>
-                {publicFeeds.map((feed) => (
-                    <FeedItem
-                        key={feed.id}
-                        feed={feed}
-                        type="public"
-                        isSelected={selectedFeedId === feed.id}
-                        isSubscribed={checkIsSubscribed(feed.id)}
-                        onClick={() => onSelectFeed(feed)}
-                        onAction={onFeedAction}
-                    />
-                ))}
-                {publicFeeds.length === 0 && discoverQuery && (
-                    <p className="text-center text-gray-400 text-sm mt-10">
-                        No feeds found.
+            <div className="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar">
+                {query.length > 0 && (
+                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        {loading ? "Searching..." : "Results"}
                     </p>
+                )}
+
+                {!loading &&
+                    publicFeeds.map((feed) => (
+                        <FeedItem
+                            key={feed.id}
+                            feed={feed}
+                            type="public"
+                            isSelected={selectedFeedId === feed.id}
+                            isSubscribed={checkIsSubscribed(feed.id)}
+                            onClick={() => onSelectFeed(feed)}
+                            onAction={onFeedAction}
+                        />
+                    ))}
+
+                {!loading && publicFeeds.length === 0 && query.length > 2 && (
+                    <EmptyState>
+                        No feeds found matching "{query}".
+                    </EmptyState>
+                )}
+
+                {!query && (
+                    <EmptyState className="mt-10 px-6">
+                        Type in the search bar above to find public feeds.
+                    </EmptyState>
                 )}
             </div>
         </div>

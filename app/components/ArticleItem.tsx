@@ -1,6 +1,7 @@
 import { Check, Circle, ThumbsUp, ThumbsDown } from "lucide-react";
 import type { Item } from "~/lib/types";
 import { Button } from "./ui/Button";
+import { stripHtml } from "~/lib/utils";
 
 interface ArticleItemProps {
     item: Item;
@@ -27,75 +28,68 @@ export function ArticleItem({
 
     return (
         <article
-            className={`bg-white border border-gray-100 rounded-xl p-5 shadow-sm transition-opacity ${item.is_read ? "opacity-50" : ""}`}
+            className={`bg-white border border-gray-100 rounded-xl p-5 shadow-sm transition-opacity ${
+                item.is_read ? "opacity-50" : ""
+            }`}
         >
-            <div className="flex gap-4">
-                <div className="flex-1 min-w-0 flex flex-col">
-                    <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600">
-                            {feedName}
-                        </span>
-                        <span className="text-[10px] text-gray-300">•</span>
-                        <span className="text-[10px] text-gray-400 font-medium">
-                            {formatDate(item.published_at)}
-                        </span>
-                    </div>
+            <a
+                href={item.link}
+                target="_blank"
+                rel="noreferrer"
+                className="w-fit block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-[#587e5b] decoration-2 underline-offset-2"
+            >
+                {item.title}
+            </a>
 
-                    <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-fit block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-brand-300 decoration-2 underline-offset-2"
-                    >
-                        {item.title}
-                    </a>
+            <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed mb-3">
+                {stripHtml(item.content).substring(0, 200)}...
+            </p>
 
-                    <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
-                        {item.content
-                            ?.replace(/<[^>]*>?/gm, "")
-                            .substring(0, 200)}
-                        ...
-                    </p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600">
+                        {feedName}
+                    </span>
+                    <span className="text-[10px] text-gray-300">•</span>
+                    <span className="text-[10px] text-gray-400 font-medium">
+                        {formatDate(item.published_at)}
+                    </span>
                 </div>
 
-                <div className="flex flex-col items-center shrink-0 pt-1 border-l border-gray-50 pl-2 ml-1">
-                    <div className="flex items-center">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={
-                                item.liked === 1
-                                    ? "text-green-700 bg-green-50"
-                                    : "text-gray-400 hover:text-green-600 hover:bg-green-50"
-                            }
-                            onClick={() => onLikeToggle(item, 1)}
-                        >
-                            <ThumbsUp
-                                size={18}
-                                fill={
-                                    item.liked === 1 ? "currentColor" : "none"
-                                }
-                            />
-                        </Button>
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={
+                            item.liked === 1
+                                ? "text-green-700 bg-green-50"
+                                : "text-gray-400 hover:text-green-600 hover:bg-green-50"
+                        }
+                        onClick={() => onLikeToggle(item, 1)}
+                        title="More like this"
+                    >
+                        <ThumbsUp
+                            size={16}
+                            fill={item.liked === 1 ? "currentColor" : "none"}
+                        />
+                    </Button>
 
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={
-                                item.liked === -1
-                                    ? "text-red-700 bg-red-50"
-                                    : "text-gray-400 hover:text-red-600 hover:bg-red-50"
-                            }
-                            onClick={() => onLikeToggle(item, -1)}
-                        >
-                            <ThumbsDown
-                                size={18}
-                                fill={
-                                    item.liked === -1 ? "currentColor" : "none"
-                                }
-                            />
-                        </Button>
-                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={
+                            item.liked === -1
+                                ? "text-red-700 bg-red-50"
+                                : "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        }
+                        onClick={() => onLikeToggle(item, -1)}
+                        title="Less like this"
+                    >
+                        <ThumbsDown
+                            size={16}
+                            fill={item.liked === -1 ? "currentColor" : "none"}
+                        />
+                    </Button>
 
                     <Button
                         variant="ghost"
@@ -108,11 +102,12 @@ export function ArticleItem({
                         onClick={() =>
                             onUpdateStatus(item.id, { is_read: !item.is_read })
                         }
+                        title={item.is_read ? "Mark as Unread" : "Mark as Read"}
                     >
                         {item.is_read ? (
-                            <Check size={18} strokeWidth={3} />
+                            <Check size={16} strokeWidth={3} />
                         ) : (
-                            <Circle size={18} />
+                            <Circle size={16} />
                         )}
                     </Button>
                 </div>

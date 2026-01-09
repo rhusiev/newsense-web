@@ -1,6 +1,7 @@
 import { X, AlertCircle, HelpCircle } from "lucide-react";
 import { createPortal } from "react-dom";
 import { Button } from "~/components/ui/Button";
+import { Modal } from "~/components/ui/Modal";
 
 interface CustomConfirmModalProps {
     isOpen: boolean;
@@ -19,46 +20,43 @@ export function CustomConfirmModal({
     onClose,
     type = "info",
 }: CustomConfirmModalProps) {
-    if (!isOpen) return null;
-    return createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={title}
+            maxWidth="max-w-sm"
+        >
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                onClick={onClose}
-            />
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-                <div
-                    className={`p-6 ${type === "danger" ? "bg-red-50" : "bg-[#fcfdfc]"}`}
-                >
-                    <div className="flex items-center gap-3 mb-3">
-                        {type === "danger" ? (
-                            <AlertCircle className="text-red-600" />
-                        ) : (
-                            <HelpCircle className="text-[#587e5b]" />
-                        )}
-                        <h3 className="font-serif text-lg font-bold text-[#0e3415]">
-                            {title}
-                        </h3>
-                    </div>
-                    <p className="text-sm text-gray-600">{message}</p>
+                className={`p-6 ${type === "danger" ? "bg-red-50" : "bg-[#fcfdfc]"}`}
+            >
+                <div className="flex items-center gap-3 mb-3">
+                    {type === "danger" ? (
+                        <AlertCircle className="text-red-600" />
+                    ) : (
+                        <HelpCircle className="text-[#587e5b]" />
+                    )}
+                    <h3 className="font-serif text-lg font-bold text-[#0e3415]">
+                        {title}
+                    </h3>
                 </div>
-                <div className="px-6 py-4 bg-white flex justify-end gap-3 border-t">
-                    <Button variant="ghost" onClick={onClose}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant={type === "danger" ? "danger" : "primary"}
-                        onClick={() => {
-                            onConfirm();
-                            onClose();
-                        }}
-                    >
-                        Confirm
-                    </Button>
-                </div>
+                <p className="text-sm text-gray-600">{message}</p>
             </div>
-        </div>,
-        document.body,
+            <div className="px-6 py-4 bg-white flex justify-end gap-3 border-t border-gray-100">
+                <Button variant="ghost" onClick={onClose}>
+                    Cancel
+                </Button>
+                <Button
+                    variant={type === "danger" ? "danger" : "primary"}
+                    onClick={() => {
+                        onConfirm();
+                        onClose();
+                    }}
+                >
+                    Confirm
+                </Button>
+            </div>
+        </Modal>
     );
 }
 
@@ -69,13 +67,15 @@ export function ErrorToast({
     message: string;
     onClose: () => void;
 }) {
+    if (!message) return null;
+
     return createPortal(
-        <div className="fixed bottom-6 right-6 z-[300] flex items-center gap-3 bg-red-600 text-white px-5 py-4 rounded-xl shadow-2xl animate-in slide-in-from-right-10">
-            <AlertCircle size={20} />
+        <div className="fixed bottom-6 right-6 z-[300] flex items-center gap-3 bg-red-600 text-white px-5 py-4 rounded-xl shadow-2xl animate-in slide-in-from-right-10 max-w-sm">
+            <AlertCircle size={20} className="shrink-0" />
             <span className="text-sm font-medium">{message}</span>
             <button
                 onClick={onClose}
-                className="ml-4 hover:bg-white/20 rounded-full p-2 transition-colors"
+                className="ml-auto hover:bg-white/20 rounded-full p-2 transition-colors"
             >
                 <X size={18} />
             </button>

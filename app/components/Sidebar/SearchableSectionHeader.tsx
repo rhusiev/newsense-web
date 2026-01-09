@@ -1,61 +1,102 @@
-import { useState } from "react";
-import { Search, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Search, X, ChevronDown, ChevronRight } from "lucide-react";
+import { SearchInput } from "../ui/SearchInput";
 
 interface SearchableSectionHeaderProps {
     title: string;
-    compact?: boolean;
     onSearch: (value: string) => void;
+    searchValue: string;
+    isExpanded: boolean;
+    onToggleExpand: () => void;
+    collapsible?: boolean;
 }
 
 export function SearchableSectionHeader({
     title,
-    compact = false,
     onSearch,
+    searchValue,
+    isExpanded,
+    onToggleExpand,
+    collapsible = false,
 }: SearchableSectionHeaderProps) {
-    const [isSearching, setIsSearching] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleClear = () => {
-        setIsSearching(false);
-        onSearch("");
+    useEffect(() => {
+        if (!isExpanded) {
+            setIsSearchOpen(false);
+        }
+    }, [isExpanded]);
+
+    const handleSearchToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isSearchOpen) {
+            setIsSearchOpen(false);
+            onSearch("");
+        } else {
+            setIsSearchOpen(true);
+        }
     };
 
+    useEffect(() => {
+        if (isSearchOpen && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isSearchOpen]);
+
     return (
-        <div
-            className={`flex items-center justify-between pr-4 ${compact ? "pl-2" : "pl-6"} h-8 mb-1`}
-        >
-            {!isSearching ? (
-                <>
-                    <span
-                        className={`${compact ? "text-gray-500" : "text-[#587e5b]"} uppercase tracking-wider text-xs font-bold`}
-                    >
+        <div className="flex flex-col px-6 py-2">
+            <div className="flex items-center justify-between h-7">
+                <div
+                    className={`flex items-center group select-none ${collapsible ? "cursor-pointer" : ""}`}
+                    onClick={() => collapsible && onToggleExpand()}
+                >
+                    {collapsible && (
+                        <span className="mr-2 text-gray-500 group-hover:text-[#587e5b] transition-colors p-0.5 rounded">
+                            {isExpanded ? (
+                                <ChevronDown size={14} strokeWidth={3} />
+                            ) : (
+                                <ChevronRight size={14} strokeWidth={3} />
+                            )}
+                        </span>
+                    )}
+                    <span className="text-[#587e5b] uppercase tracking-wider text-xs font-bold group-hover:text-[#0e3415] transition-colors">
                         {title}
                     </span>
-                    <button
-                        onClick={() => setIsSearching(true)}
-                        className="text-gray-300 hover:text-[#587e5b]"
-                    >
-                        <Search size={14} />
-                    </button>
-                </>
-            ) : (
-                <div className="flex items-center w-full relative animate-in fade-in duration-200">
-                    <input
-                        className="w-full text-xs bg-transparent border-b border-[#587e5b] focus:outline-none pb-0.5 text-[#0e3415] placeholder-gray-300"
-                        placeholder={`Filter ${title}...`}
-                        autoFocus
-                        onBlur={(e) => {
-                            if (!e.target.value) handleClear();
-                        }}
-                        onChange={(e) => onSearch(e.target.value)}
-                    />
-                    <button
-                        onClick={handleClear}
-                        className="absolute right-0 text-gray-400 hover:text-red-500"
-                    >
-                        <X size={14} />
-                    </button>
                 </div>
-            )}
+
+                {isExpanded && (
+                    <button
+                        onClick={handleSearchToggle}
+                        className={`transition-colors p-1 rounded-md ml-2 ${
+                            isSearchOpen
+                                ? "text-brand-700 bg-brand-50"
+                                : "text-gray-300 hover:text-[#587e5b] hover:bg-gray-100"
+                        }`}
+                        title={isSearchOpen ? "Close search" : "Search"}
+                    >
+                        {isSearchOpen ? <X size={14} /> : <Search size={14} />}
+                    </button>
+                )}
+            </div>
+
+            <div
+                className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-in-out ${
+                    isSearchOpen
+                        ? "grid-rows-[1fr] opacity-100 mt-2 mb-1"
+                        : "grid-rows-[0fr] opacity-0 mt-0"
+                }`}
+            >
+                <div className="overflow-hidden p-[1px]">
+                    <SearchInput
+                        ref={inputRef}
+                        value={searchValue}
+                        onChange={(e) => onSearch(e.target.value)}
+                        onClear={() => onSearch("")}
+                        placeholder={`Filter ${title.toLowerCase()}...`}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

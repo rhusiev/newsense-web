@@ -11,11 +11,27 @@ import {
     Eye,
     EyeOff,
     Loader2,
+    PanelLeft,
 } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Item } from "~/lib/types";
 import { ArticleItem } from "./ArticleItem";
 import { Button } from "./ui/Button";
+import { EmptyState } from "./ui/EmptyState";
+
+interface ArticleListProps {
+    feed: any;
+    refreshKey: number;
+    feedMap: Map<string, string>;
+    onItemRead: () => void;
+    triggerConfirm: (config: any) => void;
+    onError: (msg: string) => void;
+    externalUnreadOnly?: boolean;
+    setExternalUnreadOnly?: (val: boolean) => void;
+    isMobile?: boolean;
+    showSidebarToggle?: boolean;
+    onSidebarToggle?: () => void;
+}
 
 export function ArticleList({
     feed,
@@ -24,12 +40,21 @@ export function ArticleList({
     onItemRead,
     triggerConfirm,
     onError,
-}: any) {
+    externalUnreadOnly,
+    setExternalUnreadOnly,
+    isMobile = false,
+    showSidebarToggle = false,
+    onSidebarToggle,
+}: ArticleListProps) {
+    const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
+
+    const unreadOnly =
+        externalUnreadOnly !== undefined ? externalUnreadOnly : localUnreadOnly;
+    const setUnreadOnly = setExternalUnreadOnly || setLocalUnreadOnly;
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [unreadOnly, setUnreadOnly] = useState(false);
     const [hasMore, setHasMore] = useState(true);
 
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -163,21 +188,41 @@ export function ArticleList({
 
     return (
         <div className="flex-1 h-full flex flex-col bg-brand-surface">
-            <header className="px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10 flex justify-between items-start">
-                <div className="min-w-0 flex-1">
-                    <h1 className="text-2xl font-serif text-brand-950 mb-1 truncate">
-                        {feed?.title || "Feed"}
-                    </h1>
-                    <p className="text-sm text-gray-400">
-                        {feed?.id === "all" ? "All subscriptions" : feed?.url}
-                    </p>
+            {/* Header: Hidden on Mobile UI (uses TopBar), Visible on Desktop UI */}
+            <header
+                className={`${isMobile ? "hidden" : "flex"} px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10 justify-between items-start gap-4`}
+            >
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                    {showSidebarToggle && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onSidebarToggle}
+                            className="-ml-2 mt-0.5 text-gray-500"
+                            title="Toggle Sidebar"
+                        >
+                            <PanelLeft size={20} />
+                        </Button>
+                    )}
+                    <div className="min-w-0 flex-1">
+                        <h1 className="text-2xl font-serif text-brand-950 mb-1 truncate">
+                            {feed?.title || "Feed"}
+                        </h1>
+                        <p className="text-sm text-gray-400 truncate">
+                            {feed?.id === "all"
+                                ? "All subscriptions"
+                                : feed?.url}
+                        </p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 shrink-0">
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleSync}
                         isLoading={isSyncing}
+                        title="Refresh Articles"
                     >
                         {!isSyncing && <RotateCw size={18} />}
                     </Button>
@@ -185,13 +230,20 @@ export function ArticleList({
                     <Button
                         variant={unreadOnly ? "secondary" : "ghost"}
                         onClick={() => setUnreadOnly(!unreadOnly)}
+                        title={
+                            unreadOnly
+                                ? "Show all articles"
+                                : "Show unread only"
+                        }
                     >
                         {unreadOnly ? (
                             <EyeOff size={18} className="mr-2" />
                         ) : (
                             <Eye size={18} className="mr-2" />
                         )}
-                        <span>{unreadOnly ? "Unread Shown" : "All Shown"}</span>
+                        <span className="hidden sm:inline">
+                            {unreadOnly ? "Unread Shown" : "All Shown"}
+                        </span>
                     </Button>
 
                     <Button
@@ -217,6 +269,7 @@ export function ArticleList({
                                 },
                             })
                         }
+                        title="Mark all items in this list as read"
                     >
                         <CheckCheck size={18} className="sm:mr-2" />
                         <span className="hidden sm:inline">Mark All Read</span>
@@ -226,12 +279,12 @@ export function ArticleList({
 
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto p-8 space-y-6"
+                className={`flex-1 overflow-y-auto ${isMobile ? "p-4 space-y-4" : "p-8 space-y-6"}`}
             >
                 {items.length === 0 && !loading ? (
-                    <div className="text-center py-20 text-gray-400 italic">
+                    <EmptyState className="py-20">
                         No articles found.
-                    </div>
+                    </EmptyState>
                 ) : (
                     items.map((item) => (
                         <ArticleItem

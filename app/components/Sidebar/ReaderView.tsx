@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Feed } from "~/lib/types";
 import { FeedSection } from "./FeedSection";
 
@@ -23,8 +23,8 @@ export function ReaderView({
     onFeedAction,
     onCreateFeed,
 }: ReaderViewProps) {
-    const [subscribedFilter, setSubscribedFilter] = useState("");
-    const [ownedFilter, setOwnedFilter] = useState("");
+    const [subSearch, setSubSearch] = useState("");
+    const [ownedSearch, setOwnedSearch] = useState("");
 
     const virtualFeeds: Feed[] = useMemo(
         () => [
@@ -42,35 +42,32 @@ export function ReaderView({
         [totalUnread],
     );
 
-    const filteredSubscribed = useMemo(
-        () =>
-            subscribed.filter((f) =>
-                (f.title || f.url)
-                    .toLowerCase()
-                    .includes(subscribedFilter.toLowerCase()),
-            ),
-        [subscribed, subscribedFilter],
-    );
-
     const displaySubscribed = useMemo(() => {
-        const list = [...filteredSubscribed];
-        const search = subscribedFilter.toLowerCase();
+        let list = [...subscribed];
 
-        if ("all articles".includes(search)) {
-            list.unshift(virtualFeeds[0]);
+        if (!subSearch || "all articles".includes(subSearch.toLowerCase())) {
+            list = [virtualFeeds[0], ...list];
+        }
+
+        if (subSearch) {
+            const lowerQ = subSearch.toLowerCase();
+            list = list.filter((f) =>
+                (f.title || f.url || "").toLowerCase().includes(lowerQ),
+            );
         }
         return list;
-    }, [filteredSubscribed, subscribedFilter, virtualFeeds]);
+    }, [subscribed, subSearch, virtualFeeds]);
 
-    const filteredOwned = useMemo(
-        () =>
-            owned.filter((f) =>
-                (f.title || f.url)
-                    .toLowerCase()
-                    .includes(ownedFilter.toLowerCase()),
-            ),
-        [owned, ownedFilter],
-    );
+    const displayOwned = useMemo(() => {
+        let list = [...owned];
+        if (ownedSearch) {
+            const lowerQ = ownedSearch.toLowerCase();
+            list = list.filter((f) =>
+                (f.title || f.url || "").toLowerCase().includes(lowerQ),
+            );
+        }
+        return list;
+    }, [owned, ownedSearch]);
 
     return (
         <div className="space-y-4 animate-in fade-in duration-300">
@@ -81,23 +78,24 @@ export function ReaderView({
                 selectedFeedId={selectedFeedId}
                 onSelectFeed={onSelectFeed}
                 onFeedAction={onFeedAction}
-                onSearch={setSubscribedFilter}
                 collapsible={true}
                 defaultExpanded={true}
+                onSearchChange={setSubSearch}
+                searchValue={subSearch}
             />
 
             <FeedSection
                 title="Owned Feeds"
-                feeds={filteredOwned}
+                feeds={displayOwned}
                 feedType="owned"
                 selectedFeedId={selectedFeedId}
                 checkIsSubscribed={checkIsSubscribed}
                 onSelectFeed={onSelectFeed}
                 onFeedAction={onFeedAction}
-                onSearch={setOwnedFilter}
                 collapsible={true}
                 defaultExpanded={false}
-                onCreateFeed={onCreateFeed}
+                onSearchChange={setOwnedSearch}
+                searchValue={ownedSearch}
             />
         </div>
     );
