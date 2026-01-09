@@ -286,17 +286,23 @@ export function ArticleList({
                         No articles found.
                     </EmptyState>
                 ) : (
-                    items.map((item) => (
-                        <ArticleItem
-                            key={item.id}
-                            item={item}
-                            feedName={
-                                feedMap.get(item.feed_id) || "Subscription"
-                            }
-                            onUpdateStatus={handleUpdateStatus}
-                            onLikeToggle={handleLikeToggle}
-                        />
-                    ))
+                    items.map((item) => {
+                        const primaryFeedId =
+                            item.feed_ids.find((id) => feedMap.has(id)) ||
+                            item.feed_ids[0];
+                        const feedName =
+                            feedMap.get(primaryFeedId) || "Subscription";
+
+                        return (
+                            <ArticleItem
+                                key={item.id}
+                                item={item}
+                                feedName={feedName}
+                                onUpdateStatus={handleUpdateStatus}
+                                onLikeToggle={handleLikeToggle}
+                            />
+                        );
+                    })
                 )}
                 <div
                     ref={observerTarget}

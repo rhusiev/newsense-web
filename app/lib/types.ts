@@ -11,7 +11,7 @@ export interface Feed {
 
 export interface Item {
     id: string;
-    feed_id: string;
+    feed_ids: string[];
     title: string;
     link: string;
     content: string | null;
