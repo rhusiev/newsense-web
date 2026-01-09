@@ -96,6 +96,7 @@ export function ReaderView({
                 defaultExpanded={false}
                 onSearchChange={setOwnedSearch}
                 searchValue={ownedSearch}
+                onAdd={onCreateFeed}
             />
         </div>
     );

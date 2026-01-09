@@ -18,6 +18,7 @@ interface FeedSectionProps {
     defaultExpanded?: boolean;
     onSearchChange?: (q: string) => void;
     searchValue?: string;
+    onAdd?: () => void;
 }
 
 export function FeedSection({
@@ -32,6 +33,7 @@ export function FeedSection({
     defaultExpanded = true,
     onSearchChange,
     searchValue,
+    onAdd,
 }: FeedSectionProps) {
     const [isExpanded, setIsExpanded] = useState(
         collapsible ? defaultExpanded : true,
@@ -51,6 +53,7 @@ export function FeedSection({
                             isExpanded={isExpanded}
                             onToggleExpand={toggleExpand}
                             collapsible={collapsible}
+                            onAdd={onAdd}
                         />
                     ) : (
                         <div

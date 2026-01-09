@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, X, ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { SearchInput } from "../ui/SearchInput";
 
 interface SearchableSectionHeaderProps {
@@ -9,6 +9,7 @@ interface SearchableSectionHeaderProps {
     isExpanded: boolean;
     onToggleExpand: () => void;
     collapsible?: boolean;
+    onAdd?: () => void;
 }
 
 export function SearchableSectionHeader({
@@ -18,6 +19,7 @@ export function SearchableSectionHeader({
     isExpanded,
     onToggleExpand,
     collapsible = false,
+    onAdd,
 }: SearchableSectionHeaderProps) {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -66,17 +68,35 @@ export function SearchableSectionHeader({
                 </div>
 
                 {isExpanded && (
-                    <button
-                        onClick={handleSearchToggle}
-                        className={`transition-colors p-1 rounded-md ml-2 ${
-                            isSearchOpen
-                                ? "text-brand-700 bg-brand-50"
-                                : "text-gray-300 hover:text-[#587e5b] hover:bg-gray-100"
-                        }`}
-                        title={isSearchOpen ? "Close search" : "Search"}
-                    >
-                        {isSearchOpen ? <X size={14} /> : <Search size={14} />}
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {onAdd && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAdd();
+                                }}
+                                className="transition-colors p-1 rounded-md text-gray-300 hover:text-[#587e5b] hover:bg-gray-100"
+                                title="Create new feed"
+                            >
+                                <Plus size={14} />
+                            </button>
+                        )}
+                        <button
+                            onClick={handleSearchToggle}
+                            className={`transition-colors p-1 rounded-md ${
+                                isSearchOpen
+                                    ? "text-brand-700 bg-brand-50"
+                                    : "text-gray-300 hover:text-[#587e5b] hover:bg-gray-100"
+                            }`}
+                            title={isSearchOpen ? "Close search" : "Search"}
+                        >
+                            {isSearchOpen ? (
+                                <X size={14} />
+                            ) : (
+                                <Search size={14} />
+                            )}
+                        </button>
+                    </div>
                 )}
             </div>
 
