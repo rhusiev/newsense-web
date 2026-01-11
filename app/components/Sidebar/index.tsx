@@ -38,13 +38,12 @@ export function Sidebar({
 
     return (
         <div className="h-full flex flex-col bg-white">
-            {/* Desktop Sidebar Header - Mode Switcher Only */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#9ac39d]/30 shrink-0 h-16">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border-light/30 shrink-0 h-16">
                 <div className="flex gap-2 w-full">
                     <button
                         disabled={!user}
                         className={`flex-1 p-2 rounded-lg transition-colors relative flex items-center justify-center gap-2 font-medium text-sm
-                            ${mode === "reader" ? "bg-[#eef5ef] text-[#0e3415]" : "text-gray-400"} 
+                            ${mode === "reader" ? "bg-brand-surface-active text-brand-900" : "text-gray-400"} 
                             ${!user ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"}
                         `}
                         onClick={() => setMode("reader")}
@@ -53,11 +52,11 @@ export function Sidebar({
                         <LayoutList size={18} />
                         <span>Feeds</span>
                         {user && totalUnread > 0 && mode !== "reader" && (
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-[#587e5b] rounded-full border border-white"></span>
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-brand-accent rounded-full border border-white"></span>
                         )}
                     </button>
                     <button
-                        className={`flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium text-sm ${mode === "discover" ? "bg-[#eef5ef] text-[#0e3415]" : "text-gray-400 hover:text-[#0e3415] hover:bg-gray-100"}`}
+                        className={`flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium text-sm ${mode === "discover" ? "bg-brand-surface-active text-brand-900" : "text-gray-400 hover:text-brand-900 hover:bg-gray-100"}`}
                         onClick={() => setMode("discover")}
                         title="Discover"
                     >

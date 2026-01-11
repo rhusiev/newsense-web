@@ -5,20 +5,13 @@ import {
     useCallback,
     useLayoutEffect,
 } from "react";
-import {
-    CheckCheck,
-    RotateCw,
-    Eye,
-    EyeOff,
-    Loader2,
-    PanelLeft,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Item, Cluster } from "~/lib/types";
 import { ArticleItem } from "./ArticleItem";
 import { ClusterItem } from "./ClusterItem";
-import { Button } from "./ui/Button";
 import { EmptyState } from "./ui/EmptyState";
+import { ArticleListHeader } from "./ArticleListHeader";
 
 interface ArticleListProps {
     feed: any;
@@ -309,104 +302,21 @@ export function ArticleList({
 
     return (
         <div className="flex-1 h-full flex flex-col bg-brand-surface">
-            <header
-                className={`${isMobile ? "hidden" : "flex"} px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10 justify-between items-start gap-4`}
-            >
-                <div className="flex items-start gap-3 min-w-0 flex-1">
-                    {showSidebarToggle && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={onSidebarToggle}
-                            className="-ml-2 mt-0.5 text-gray-500"
-                            title="Toggle Sidebar"
-                        >
-                            <PanelLeft size={20} />
-                        </Button>
-                    )}
-                    <div className="min-w-0 flex-1">
-                        <h1 className="text-2xl font-serif text-brand-950 mb-1 truncate">
-                            {feed?.title || "Feed"}
-                        </h1>
-                        <p className="text-sm text-gray-400 truncate">
-                            {feed?.id === "all"
-                                ? "All subscriptions"
-                                : feed?.url}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleSync}
-                        isLoading={isSyncing}
-                        title="Refresh Articles"
-                    >
-                        {!isSyncing && <RotateCw size={18} />}
-                    </Button>
-
-                    <Button
-                        variant={unreadOnly ? "secondary" : "ghost"}
-                        onClick={() => setUnreadOnly(!unreadOnly)}
-                        title={
-                            unreadOnly
-                                ? "Show all articles"
-                                : "Show unread only"
-                        }
-                    >
-                        {unreadOnly ? (
-                            <EyeOff size={18} className="mr-2" />
-                        ) : (
-                            <Eye size={18} className="mr-2" />
-                        )}
-                        <span className="hidden sm:inline">
-                            {unreadOnly ? "Unread Shown" : "All Shown"}
-                        </span>
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        onClick={() =>
-                            triggerConfirm({
-                                title: "Mark All Read",
-                                message: "Mark all items in this view as read?",
-                                onConfirm: async () => {
-                                    try {
-                                        const since = "1970-01-01T00:00:00Z";
-                                        if (USE_CLUSTERS) {
-                                            if (feed.id === "all") {
-                                                await api.markAllRead(since);
-                                            } else {
-                                                await api.markFeedClustersRead(
-                                                    feed.id,
-                                                    since,
-                                                );
-                                            }
-                                        } else {
-                                            feed.id === "all"
-                                                ? await api.markAllRead(since)
-                                                : await api.markFeedRead(
-                                                      feed.id,
-                                                      since,
-                                                  );
-                                        }
-                                        loadItems();
-                                        onItemRead();
-                                    } catch (e) {
-                                        onError("Action failed.");
-                                    }
-                                },
-                            })
-                        }
-                        title="Mark all items in this list as read"
-                    >
-                        <CheckCheck size={18} className="sm:mr-2" />
-                        <span className="hidden sm:inline">Mark All Read</span>
-                    </Button>
-                </div>
-            </header>
+            <ArticleListHeader
+                feed={feed}
+                isMobile={isMobile}
+                showSidebarToggle={showSidebarToggle}
+                onSidebarToggle={onSidebarToggle}
+                isSyncing={isSyncing}
+                onSync={handleSync}
+                unreadOnly={unreadOnly}
+                setUnreadOnly={setUnreadOnly}
+                triggerConfirm={triggerConfirm}
+                onError={onError}
+                loadItems={loadItems}
+                onItemRead={onItemRead}
+                USE_CLUSTERS={USE_CLUSTERS}
+            />
 
             <div
                 ref={scrollRef}

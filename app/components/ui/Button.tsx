@@ -38,16 +38,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         const closeTimer = useRef<NodeJS.Timeout | null>(null);
 
         const baseStyles =
-            "inline-flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0e3415] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] relative";
+            "inline-flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] relative";
 
         const variants = {
             primary:
-                "bg-[#0e3415] text-white hover:bg-[#587e5b] active:bg-[#587e5b] shadow-sm border border-transparent",
+                "bg-brand-900 text-white hover:bg-brand-accent active:bg-brand-accent shadow-sm border border-transparent",
             secondary:
-                "bg-[#eef5ef] text-[#0e3415] hover:bg-[#dcebdd] active:bg-[#dcebdd] border border-transparent",
+                "bg-brand-surface-active text-brand-900 hover:bg-brand-surface-active-hover active:bg-brand-surface-active-hover border border-transparent",
             outline:
-                "border border-gray-200 bg-white text-gray-700 hover:border-[#587e5b] hover:text-[#0e3415] active:bg-gray-50",
-            ghost: "text-gray-500 hover:bg-gray-100 hover:text-[#0e3415] active:bg-gray-200 bg-transparent",
+                "border border-gray-200 bg-white text-gray-700 hover:border-brand-accent hover:text-brand-900 active:bg-gray-50",
+            ghost: "text-gray-500 hover:bg-gray-100 hover:text-brand-900 active:bg-gray-200 bg-transparent",
             danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm",
         };
 

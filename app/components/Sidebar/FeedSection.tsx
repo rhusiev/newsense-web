@@ -64,7 +64,7 @@ export function FeedSection({
                         >
                             <div className="flex items-center">
                                 {collapsible && (
-                                    <span className="mr-2 text-gray-500 group-hover:text-[#587e5b] transition-colors p-0.5 rounded">
+                                    <span className="mr-2 text-gray-500 group-hover:text-brand-accent transition-colors p-0.5 rounded">
                                         {isExpanded ? (
                                             <ChevronDown
                                                 size={14}
@@ -78,7 +78,7 @@ export function FeedSection({
                                         )}
                                     </span>
                                 )}
-                                <span className="text-[#587e5b] uppercase tracking-wider text-xs font-bold group-hover:text-[#0e3415] transition-colors">
+                                <span className="text-brand-accent uppercase tracking-wider text-xs font-bold group-hover:text-brand-900 transition-colors">
                                     {title}
                                 </span>
                             </div>

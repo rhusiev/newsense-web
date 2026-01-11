@@ -28,15 +28,15 @@ export function CustomConfirmModal({
             maxWidth="max-w-sm"
         >
             <div
-                className={`p-6 ${type === "danger" ? "bg-red-50" : "bg-[#fcfdfc]"}`}
+                className={`p-6 ${type === "danger" ? "bg-red-50" : "bg-brand-surface"}`}
             >
                 <div className="flex items-center gap-3 mb-3">
                     {type === "danger" ? (
                         <AlertCircle className="text-red-600" />
                     ) : (
-                        <HelpCircle className="text-[#587e5b]" />
+                        <HelpCircle className="text-brand-accent" />
                     )}
-                    <h3 className="font-serif text-lg font-bold text-[#0e3415]">
+                    <h3 className="font-serif text-lg font-bold text-brand-900">
                         {title}
                     </h3>
                 </div>

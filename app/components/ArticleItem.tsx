@@ -1,7 +1,7 @@
 import { Check, Circle, ThumbsUp, ThumbsDown } from "lucide-react";
 import type { Item } from "~/lib/types";
-import { Button } from "./ui/Button";
 import { stripHtml } from "~/lib/utils";
+import { ActionButton } from "./ui/ActionButton";
 
 interface ArticleItemProps {
     item: Item;
@@ -48,7 +48,7 @@ export function ArticleItem({
                         href={item.link}
                         target="_blank"
                         rel="noreferrer"
-                        className="w-fit block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-[#587e5b] decoration-2 underline-offset-2"
+                        className="w-fit block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-brand-accent decoration-2 underline-offset-2"
                     >
                         {item.title}
                     </a>
@@ -69,56 +69,30 @@ export function ArticleItem({
                         </div>
 
                         <div className="flex items-center gap-1">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className={
-                                    item.liked === 1
-                                        ? "text-green-700 bg-green-50"
-                                        : "text-gray-400 hover:text-green-600 hover:bg-green-50"
-                                }
+                            <ActionButton
+                                icon={ThumbsUp}
+                                active={item.liked === 1}
+                                activeClass="text-green-700 bg-green-50"
+                                defaultClass="text-gray-400 hover:text-green-600 hover:bg-green-50"
                                 onClick={() => onLikeToggle(item, 1)}
                                 title="More like this"
-                            >
-                                <ThumbsUp
-                                    size={16}
-                                    fill={
-                                        item.liked === 1
-                                            ? "currentColor"
-                                            : "none"
-                                    }
-                                />
-                            </Button>
+                            />
 
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className={
-                                    item.liked === -1
-                                        ? "text-red-700 bg-red-50"
-                                        : "text-gray-400 hover:text-red-600 hover:bg-red-50"
-                                }
+                            <ActionButton
+                                icon={ThumbsDown}
+                                active={item.liked === -1}
+                                activeClass="text-red-700 bg-red-50"
+                                defaultClass="text-gray-400 hover:text-red-600 hover:bg-red-50"
                                 onClick={() => onLikeToggle(item, -1)}
                                 title="Less like this"
-                            >
-                                <ThumbsDown
-                                    size={16}
-                                    fill={
-                                        item.liked === -1
-                                            ? "currentColor"
-                                            : "none"
-                                    }
-                                />
-                            </Button>
+                            />
 
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className={
-                                    item.is_read
-                                        ? "text-brand-600 bg-brand-50"
-                                        : "text-gray-400 hover:text-brand-600 hover:bg-brand-50"
-                                }
+                            <ActionButton
+                                icon={item.is_read ? Check : Circle}
+                                active={item.is_read}
+                                activeClass="text-brand-600 bg-brand-50"
+                                defaultClass="text-gray-400 hover:text-brand-600 hover:bg-brand-50"
+                                shouldFill={false}
                                 onClick={() =>
                                     onUpdateStatus(item.id, {
                                         is_read: !item.is_read,
@@ -129,13 +103,8 @@ export function ArticleItem({
                                         ? "Mark as Unread"
                                         : "Mark as Read"
                                 }
-                            >
-                                {item.is_read ? (
-                                    <Check size={16} strokeWidth={3} />
-                                ) : (
-                                    <Circle size={16} />
-                                )}
-                            </Button>
+                                size={16}
+                            />
                         </div>
                     </div>
                 </div>

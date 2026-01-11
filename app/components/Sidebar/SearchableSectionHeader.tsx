@@ -54,7 +54,7 @@ export function SearchableSectionHeader({
                     onClick={() => collapsible && onToggleExpand()}
                 >
                     {collapsible && (
-                        <span className="mr-2 text-gray-500 group-hover:text-[#587e5b] transition-colors p-0.5 rounded">
+                        <span className="mr-2 text-gray-500 group-hover:text-brand-accent transition-colors p-0.5 rounded">
                             {isExpanded ? (
                                 <ChevronDown size={14} strokeWidth={3} />
                             ) : (
@@ -62,7 +62,7 @@ export function SearchableSectionHeader({
                             )}
                         </span>
                     )}
-                    <span className="text-[#587e5b] uppercase tracking-wider text-xs font-bold group-hover:text-[#0e3415] transition-colors">
+                    <span className="text-brand-accent uppercase tracking-wider text-xs font-bold group-hover:text-brand-900 transition-colors">
                         {title}
                     </span>
                 </div>
@@ -75,7 +75,7 @@ export function SearchableSectionHeader({
                                     e.stopPropagation();
                                     onAdd();
                                 }}
-                                className="transition-colors p-1 rounded-md text-gray-300 hover:text-[#587e5b] hover:bg-gray-100"
+                                className="transition-colors p-1 rounded-md text-gray-300 hover:text-brand-accent hover:bg-gray-100"
                                 title="Create new feed"
                             >
                                 <Plus size={14} />
@@ -86,7 +86,7 @@ export function SearchableSectionHeader({
                             className={`transition-colors p-1 rounded-md ${
                                 isSearchOpen
                                     ? "text-brand-700 bg-brand-50"
-                                    : "text-gray-300 hover:text-[#587e5b] hover:bg-gray-100"
+                                    : "text-gray-300 hover:text-brand-accent hover:bg-gray-100"
                             }`}
                             title={isSearchOpen ? "Close search" : "Search"}
                         >

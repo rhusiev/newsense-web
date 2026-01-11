@@ -13,7 +13,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         return (
             <div
                 className={cn(
-                    "relative w-full flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus-within:border-[#587e5b] focus-within:ring-1 focus-within:ring-[#587e5b]/20 transition-all",
+                    "relative w-full flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus-within:border-brand-accent focus-within:ring-1 focus-within:ring-brand-accent/20 transition-all",
                     containerClassName,
                 )}
             >
@@ -22,7 +22,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
                     type="text"
                     value={value}
                     className={cn(
-                        "bg-transparent border-none outline-none w-full text-sm text-[#0e3415] placeholder:text-gray-400 h-6",
+                        "bg-transparent border-none outline-none w-full text-sm text-brand-900 placeholder:text-gray-400 h-6",
                         !onClear ? "pr-0" : "pr-6",
                         className,
                     )}

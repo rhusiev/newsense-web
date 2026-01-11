@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Cluster } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
+import { ActionButton } from "./ui/ActionButton";
 
 interface ClusterItemProps {
     cluster: Cluster;
@@ -239,46 +240,6 @@ export function ClusterItem({
                 </div>
             </div>
         </article>
-    );
-}
-
-interface ActionButtonProps {
-    icon: any;
-    active: boolean;
-    activeClass: string;
-    defaultClass: string;
-    onClick: () => void;
-    title: string;
-    shouldFill?: boolean;
-}
-
-function ActionButton({
-    icon: Icon,
-    active,
-    activeClass,
-    defaultClass,
-    onClick,
-    title,
-    shouldFill = true,
-}: ActionButtonProps) {
-    return (
-        <button
-            onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-            }}
-            title={title}
-            className={`
-                p-1.5 rounded-md transition-all duration-200
-                ${active ? activeClass : defaultClass}
-            `}
-        >
-            <Icon
-                size={16}
-                strokeWidth={active ? 2.5 : 2}
-                fill={active && shouldFill ? "currentColor" : "none"}
-            />
-        </button>
     );
 }
 

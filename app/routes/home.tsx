@@ -1,19 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { data } from "react-router";
-import { Sidebar } from "~/components/Sidebar/index";
-import { ArticleList } from "~/components/ArticleList";
 import { AuthProvider, useAuth } from "~/lib/auth-context";
 import { AUTH_API_URL, api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
 import type { Route } from "./+types/home";
-import { CustomConfirmModal, ErrorToast } from "~/components/UIOverlay";
-import { MobileTopBar, MobileBottomNav } from "~/components/MobileUI";
-import { FeedSection } from "~/components/Sidebar/FeedSection";
-import { DiscoverView } from "~/components/Sidebar/DiscoverView";
-import { AuthModal } from "~/components/AuthModal";
-import { FeedManageModal, FeedInfoModal } from "~/components/FeedModals";
-import { SettingsModal } from "~/components/SettingsModal";
-import { Settings, LogOut } from "lucide-react";
+import { MobileLayout } from "~/components/Home/MobileLayout";
+import { DesktopLayout } from "~/components/Home/DesktopLayout";
 
 export async function loader({ request }: Route.LoaderArgs) {
     const cookie = request.headers.get("Cookie");
@@ -58,11 +50,7 @@ function HomeContent() {
         const handleResize = () => {
             const width = window.innerWidth;
             const isTouch = window.matchMedia("(pointer: coarse)").matches;
-
-            // heuristic for mobile:
-            // a touch device and width < 1000px or width < 640px
             const isMobileUI = (isTouch && width < 1000) || width < 640;
-
             const isNarrow = !isMobileUI && width < 900;
 
             setLayoutMode(isMobileUI ? "mobile" : "desktop");
@@ -76,7 +64,6 @@ function HomeContent() {
         };
 
         handleResize();
-
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, [layoutMode]);
@@ -94,7 +81,6 @@ function HomeContent() {
         "subscriptions" | "owned" | "discover"
     >("subscriptions");
     const [mobileSearchQuery, setMobileSearchQuery] = useState("");
-
     const [unreadOnly, setUnreadOnly] = useState(false);
 
     const [authModal, setAuthModal] = useState<{
@@ -280,332 +266,81 @@ function HomeContent() {
         return list;
     };
 
+    const modalProps = {
+        authModal,
+        setAuthModal,
+        manageModal,
+        setManageModal,
+        infoModalFeed,
+        setInfoModalFeed,
+        settingsOpen,
+        setSettingsOpen,
+        confirmConfig,
+        setConfirmConfig,
+        error,
+        setError,
+        onSuccess: () => {
+            loadData();
+            setRefreshKey((p) => p + 1);
+        },
+        user,
+    };
+
     if (layoutMode === "loading") return null;
 
     if (layoutMode === "mobile") {
         return (
-            <div className="flex flex-col h-screen w-full bg-white overflow-hidden text-[#0e3415]">
-                <MobileTopBar
-                    user={user}
-                    activeTab={mobileTab}
-                    selectedFeed={selectedFeed}
-                    searchQuery={mobileSearchQuery}
-                    onSearchChange={setMobileSearchQuery}
-                    onClearSearch={() => setMobileSearchQuery("")}
-                    onBack={() => setSelectedFeed(null)}
-                    onCreateFeed={() =>
-                        setManageModal({ open: true, mode: "create" })
-                    }
-                    unreadOnly={unreadOnly}
-                    isSyncing={false}
-                    onToggleUnread={() => setUnreadOnly(!unreadOnly)}
-                    onMarkAllRead={() => {
-                        if (selectedFeed)
-                            handleFeedAction("mark_read", selectedFeed);
-                    }}
-                    onRefresh={() => setRefreshKey((p) => p + 1)}
-                    onProfileClick={() => {}}
-                    onSettingsClick={() => setSettingsOpen(true)}
-                    onLogoutClick={logout}
-                    onLoginClick={() =>
-                        setAuthModal({ open: true, view: "login" })
-                    }
-                />
-
-                <main className="flex-1 overflow-hidden relative flex flex-col">
-                    {selectedFeed ? (
-                        <ArticleList
-                            feed={selectedFeed}
-                            refreshKey={refreshKey}
-                            onItemRead={loadData}
-                            feedMap={feedMap}
-                            triggerConfirm={triggerConfirm}
-                            onError={setError}
-                            externalUnreadOnly={unreadOnly}
-                            setExternalUnreadOnly={setUnreadOnly}
-                            isMobile={true}
-                        />
-                    ) : (
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                            {mobileTab === "subscriptions" && (
-                                <FeedSection
-                                    feeds={getFilteredSubscribed()}
-                                    feedType="subscribed"
-                                    selectedFeedId={null}
-                                    onSelectFeed={setSelectedFeed}
-                                    onFeedAction={handleFeedAction}
-                                />
-                            )}
-                            {mobileTab === "owned" && (
-                                <FeedSection
-                                    feeds={getFilteredOwned()}
-                                    feedType="owned"
-                                    selectedFeedId={null}
-                                    onSelectFeed={setSelectedFeed}
-                                    onFeedAction={handleFeedAction}
-                                />
-                            )}
-                            {mobileTab === "discover" && (
-                                <DiscoverView
-                                    selectedFeedId={null}
-                                    checkIsSubscribed={(id) =>
-                                        subscribed.some((s) => s.id === id)
-                                    }
-                                    onSelectFeed={setSelectedFeed}
-                                    onFeedAction={handleFeedAction}
-                                />
-                            )}
-
-                            {!user && mobileTab !== "discover" && (
-                                <div className="text-center mt-20 px-6">
-                                    <p className="text-gray-500 mb-4">
-                                        Please log in to view your feeds.
-                                    </p>
-                                    <button
-                                        onClick={() =>
-                                            setAuthModal({
-                                                open: true,
-                                                view: "login",
-                                            })
-                                        }
-                                        className="bg-brand-600 text-white px-4 py-2 rounded-lg font-bold"
-                                    >
-                                        Sign In
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </main>
-
-                <MobileBottomNav
-                    activeTab={mobileTab}
-                    onTabChange={(tab) => {
-                        setMobileTab(tab);
-                        setSelectedFeed(null);
-                    }}
-                />
-
-                <SharedModals
-                    authModal={authModal}
-                    setAuthModal={setAuthModal}
-                    manageModal={manageModal}
-                    setManageModal={setManageModal}
-                    infoModalFeed={infoModalFeed}
-                    setInfoModalFeed={setInfoModalFeed}
-                    settingsOpen={settingsOpen}
-                    setSettingsOpen={setSettingsOpen}
-                    confirmConfig={confirmConfig}
-                    setConfirmConfig={setConfirmConfig}
-                    error={error}
-                    setError={setError}
-                    onSuccess={() => {
-                        loadData();
-                        setRefreshKey((p) => p + 1);
-                    }}
-                    user={user}
-                />
-            </div>
+            <MobileLayout
+                user={user}
+                mobileTab={mobileTab}
+                setMobileTab={setMobileTab}
+                selectedFeed={selectedFeed}
+                setSelectedFeed={setSelectedFeed}
+                mobileSearchQuery={mobileSearchQuery}
+                setMobileSearchQuery={setMobileSearchQuery}
+                unreadOnly={unreadOnly}
+                setUnreadOnly={setUnreadOnly}
+                refreshKey={refreshKey}
+                setRefreshKey={setRefreshKey}
+                logout={logout}
+                setAuthModal={setAuthModal}
+                setSettingsOpen={setSettingsOpen}
+                setManageModal={setManageModal}
+                handleFeedAction={handleFeedAction}
+                feedMap={feedMap}
+                triggerConfirm={triggerConfirm}
+                setError={setError}
+                onItemRead={loadData}
+                subscribed={subscribed}
+                getFilteredSubscribed={getFilteredSubscribed}
+                getFilteredOwned={getFilteredOwned}
+                modalProps={modalProps}
+            />
         );
     }
 
     return (
-        <div className="flex h-screen w-full bg-white overflow-hidden text-[#0e3415] relative">
-            <>
-                {isDesktopNarrow && desktopSidebarOpen && (
-                    <div
-                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 animate-in fade-in duration-200"
-                        onClick={() => setDesktopSidebarOpen(false)}
-                    />
-                )}
-                <aside
-                    className={`
-                        flex flex-col h-full bg-white border-r border-[#9ac39d]/20 transition-all duration-300
-                        ${
-                            isDesktopNarrow
-                                ? `fixed top-0 left-0 bottom-0 z-40 w-80 shadow-2xl transform ${desktopSidebarOpen ? "translate-x-0" : "-translate-x-full"}`
-                                : "w-80 relative flex-shrink-0"
-                        }
-                    `}
-                >
-                    <Sidebar
-                        user={user}
-                        subscribed={subscribed}
-                        owned={owned}
-                        totalUnread={totalUnread}
-                        selectedFeedId={selectedFeed?.id || null}
-                        onSelectFeed={setSelectedFeed}
-                        onFeedAction={handleFeedAction}
-                        triggerConfirm={triggerConfirm}
-                        onLoginRequest={() =>
-                            setAuthModal({ open: true, view: "login" })
-                        }
-                        onRegisterRequest={() =>
-                            setAuthModal({ open: true, view: "register" })
-                        }
-                        onLogoutRequest={logout}
-                        onSettingsRequest={() => setSettingsOpen(true)}
-                        onCreateFeed={() =>
-                            setManageModal({ open: true, mode: "create" })
-                        }
-                    />
-
-                    <div className="mt-auto border-t border-[#9ac39d]/30 bg-[#fbfcfb] p-4 shrink-0">
-                        {user ? (
-                            <div className="flex items-center justify-between group">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-[#0e3415] text-white flex items-center justify-center text-sm font-medium">
-                                        {user.username
-                                            .slice(0, 2)
-                                            .toUpperCase()}
-                                    </div>
-                                    <span className="text-sm font-semibold text-gray-700">
-                                        {user.username}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => setSettingsOpen(true)}
-                                        className="p-1.5 text-gray-400 hover:text-[#0e3415] rounded-md hover:bg-gray-100"
-                                        title="Settings"
-                                    >
-                                        <Settings size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => logout()}
-                                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50"
-                                        title="Logout"
-                                    >
-                                        <LogOut size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    onClick={() =>
-                                        setAuthModal({
-                                            open: true,
-                                            view: "login",
-                                        })
-                                    }
-                                    className="px-3 py-1.5 text-sm border rounded hover:border-gray-400"
-                                >
-                                    Sign In
-                                </button>
-                                <button
-                                    onClick={() =>
-                                        setAuthModal({
-                                            open: true,
-                                            view: "register",
-                                        })
-                                    }
-                                    className="px-3 py-1.5 text-sm bg-[#0e3415] text-white rounded hover:bg-[#587e5b]"
-                                >
-                                    Register
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </aside>
-            </>
-
-            <main className="flex-1 h-full min-w-0 relative flex flex-col">
-                <ArticleList
-                    feed={selectedFeed}
-                    refreshKey={refreshKey}
-                    onItemRead={loadData}
-                    feedMap={feedMap}
-                    triggerConfirm={triggerConfirm}
-                    onError={setError}
-                    isMobile={false}
-                    showSidebarToggle={isDesktopNarrow}
-                    onSidebarToggle={() =>
-                        setDesktopSidebarOpen(!desktopSidebarOpen)
-                    }
-                />
-            </main>
-
-            <SharedModals
-                authModal={authModal}
-                setAuthModal={setAuthModal}
-                manageModal={manageModal}
-                setManageModal={setManageModal}
-                infoModalFeed={infoModalFeed}
-                setInfoModalFeed={setInfoModalFeed}
-                settingsOpen={settingsOpen}
-                setSettingsOpen={setSettingsOpen}
-                confirmConfig={confirmConfig}
-                setConfirmConfig={setConfirmConfig}
-                error={error}
-                setError={setError}
-                onSuccess={() => {
-                    loadData();
-                    setRefreshKey((p) => p + 1);
-                }}
-                user={user}
-            />
-        </div>
-    );
-}
-
-function SharedModals({
-    authModal,
-    setAuthModal,
-    manageModal,
-    setManageModal,
-    infoModalFeed,
-    setInfoModalFeed,
-    settingsOpen,
-    setSettingsOpen,
-    confirmConfig,
-    setConfirmConfig,
-    error,
-    setError,
-    onSuccess,
-    user,
-}: any) {
-    return (
-        <>
-            <CustomConfirmModal
-                {...confirmConfig}
-                onClose={() =>
-                    setConfirmConfig((prev: any) => ({
-                        ...prev,
-                        isOpen: false,
-                    }))
-                }
-            />
-            {error && (
-                <ErrorToast message={error} onClose={() => setError(null)} />
-            )}
-
-            <AuthModal
-                isOpen={authModal.open}
-                onClose={() => setAuthModal({ ...authModal, open: false })}
-                initialView={authModal.view}
-            />
-            {user && (
-                <FeedManageModal
-                    isOpen={manageModal.open}
-                    mode={manageModal.mode}
-                    feed={manageModal.feed}
-                    onClose={() =>
-                        setManageModal({ ...manageModal, open: false })
-                    }
-                    onSuccess={onSuccess}
-                />
-            )}
-            {user && (
-                <FeedInfoModal
-                    feed={infoModalFeed}
-                    onClose={() => setInfoModalFeed(null)}
-                />
-            )}
-            <SettingsModal
-                isOpen={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
-            />
-        </>
+        <DesktopLayout
+            user={user}
+            isDesktopNarrow={isDesktopNarrow}
+            desktopSidebarOpen={desktopSidebarOpen}
+            setDesktopSidebarOpen={setDesktopSidebarOpen}
+            selectedFeed={selectedFeed}
+            setSelectedFeed={setSelectedFeed}
+            subscribed={subscribed}
+            owned={owned}
+            totalUnread={totalUnread}
+            handleFeedAction={handleFeedAction}
+            triggerConfirm={triggerConfirm}
+            logout={logout}
+            setAuthModal={setAuthModal}
+            setSettingsOpen={setSettingsOpen}
+            setManageModal={setManageModal}
+            refreshKey={refreshKey}
+            onItemRead={loadData}
+            feedMap={feedMap}
+            setError={setError}
+            modalProps={modalProps}
+        />
     );
 }
