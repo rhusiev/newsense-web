@@ -38,11 +38,11 @@ export function Sidebar({
 
     return (
         <div className="h-full flex flex-col bg-white">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border-light/30 shrink-0 h-16">
+            <div className="flex items-center justify-between px-6 py-4 shrink-0 h-16">
                 <div className="flex gap-2 w-full">
                     <button
                         disabled={!user}
-                        className={`flex-1 p-2 rounded-lg transition-colors relative flex items-center justify-center gap-2 font-medium text-sm
+                        className={`flex-1 p-3 rounded-lg transition-colors relative flex items-center justify-center gap-2 font-medium text-sm
                             ${mode === "reader" ? "bg-brand-surface-active text-brand-900" : "text-gray-400"} 
                             ${!user ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"}
                         `}
