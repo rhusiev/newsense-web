@@ -75,7 +75,7 @@ export const api = {
         }),
 
     markFeedRead: (feedId: string, since: string) =>
-        fetchClient(`${ITEMS_URL}/feeds/${feedId}/items/mark-read`, {
+        fetchClient(`${ITEMS_URL}/items/feed/${feedId}/mark-read`, {
             method: "POST",
             body: JSON.stringify({ since }),
         }),
@@ -90,7 +90,7 @@ export const api = {
         if (params.limit) query.append("limit", params.limit.toString());
 
         return fetchClient(
-            `${ITEMS_URL}/feeds/${feedId}/items?${query.toString()}`,
+            `${ITEMS_URL}/items/feed/${feedId}?${query.toString()}`,
         );
     },
 
@@ -132,7 +132,7 @@ export const api = {
         if (params.before) query.append("before", params.before);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
-        return fetchClient(`${ITEMS_URL}/feeds/${feedId}/clusters?${query.toString()}`);
+        return fetchClient(`${ITEMS_URL}/clusters/feed/${feedId}?${query.toString()}`);
     },
 
     updateClusterStatus: (
@@ -145,7 +145,7 @@ export const api = {
         }),
 
     markFeedClustersRead: (feedId: string, since: string) =>
-        fetchClient(`${ITEMS_URL}/feeds/${feedId}/clusters/mark-read`, {
+        fetchClient(`${ITEMS_URL}/clusters/feed/${feedId}/mark-read`, {
             method: "POST",
             body: JSON.stringify({ since }),
         }),
