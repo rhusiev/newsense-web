@@ -113,4 +113,43 @@ export const api = {
             method: "PUT",
             body: JSON.stringify(status),
         }),
+
+    getGlobalClusters: (
+        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.before) query.append("before", params.before);
+        if (params.unread_only) query.append("unread_only", "true");
+        if (params.limit) query.append("limit", params.limit.toString());
+        return fetchClient(`${ITEMS_URL}/clusters?${query.toString()}`);
+    },
+
+    getFeedClusters: (
+        feedId: string,
+        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.before) query.append("before", params.before);
+        if (params.unread_only) query.append("unread_only", "true");
+        if (params.limit) query.append("limit", params.limit.toString());
+        return fetchClient(`${ITEMS_URL}/feeds/${feedId}/clusters?${query.toString()}`);
+    },
+
+    updateClusterStatus: (
+        clusterId: string,
+        status: { is_read?: boolean; liked?: number },
+    ) =>
+        fetchClient(`${ITEMS_URL}/clusters/${clusterId}/status`, {
+            method: "PUT",
+            body: JSON.stringify(status),
+        }),
+
+    markFeedClustersRead: (feedId: string, since: string) =>
+        fetchClient(`${ITEMS_URL}/feeds/${feedId}/clusters/mark-read`, {
+            method: "POST",
+            body: JSON.stringify({ since }),
+        }),
+    
+    getClusterUnreadCount: () => 
+        fetchClient(`${ITEMS_URL}/clusters/unread-count`),
 };

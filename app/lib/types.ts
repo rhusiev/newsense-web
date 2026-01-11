@@ -16,9 +16,19 @@ export interface Item {
     link: string;
     content: string | null;
     author: string | null;
-    published_at: string | null;
-    is_read: boolean | null;
-    liked: number | null;
+    published_at: string;
+    is_read: boolean;
+    liked: number; // 0, 1, or -1
+    cluster_id: string | null;
+}
+
+export interface Cluster {
+    id: string;
+    is_cluster: boolean;
+    sort_date: string;
+    items: Item[];
+    is_read?: boolean;
+    liked?: number;
 }
 
 export interface User {

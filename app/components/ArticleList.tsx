@@ -14,8 +14,9 @@ import {
     PanelLeft,
 } from "lucide-react";
 import { api } from "~/lib/api";
-import type { Item } from "~/lib/types";
+import type { Item, Cluster } from "~/lib/types";
 import { ArticleItem } from "./ArticleItem";
+import { ClusterItem } from "./ClusterItem";
 import { Button } from "./ui/Button";
 import { EmptyState } from "./ui/EmptyState";
 
@@ -46,12 +47,17 @@ export function ArticleList({
     showSidebarToggle = false,
     onSidebarToggle,
 }: ArticleListProps) {
+    const USE_CLUSTERS = true;
+
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
 
     const unreadOnly =
         externalUnreadOnly !== undefined ? externalUnreadOnly : localUnreadOnly;
     const setUnreadOnly = setExternalUnreadOnly || setLocalUnreadOnly;
+
     const [items, setItems] = useState<Item[]>([]);
+    const [clusters, setClusters] = useState<Cluster[]>([]);
+
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
@@ -68,7 +74,7 @@ export function ArticleList({
             scrollRef.current.scrollTop += diff;
             lastScrollHeight.current = 0;
         }
-    }, [items]);
+    }, [items, clusters]);
 
     const loadItems = useCallback(async () => {
         if (!feed) return;
@@ -76,40 +82,81 @@ export function ArticleList({
         setHasMore(true);
         try {
             const params = { limit: 20, unread_only: unreadOnly };
-            const data =
-                feed.id === "all"
-                    ? await api.getAllItems(params)
-                    : await api.getFeedItems(feed.id, params);
-            setItems(data);
-            setHasMore(data.length === 20);
+
+            if (USE_CLUSTERS) {
+                const data =
+                    feed.id === "all"
+                        ? await api.getGlobalClusters(params)
+                        : await api.getFeedClusters(feed.id, params);
+                setClusters(data);
+                setHasMore(data.length === 20);
+                setItems([]);
+            } else {
+                const data =
+                    feed.id === "all"
+                        ? await api.getAllItems(params)
+                        : await api.getFeedItems(feed.id, params);
+                setItems(data);
+                setHasMore(data.length === 20);
+                setClusters([]);
+            }
         } catch (err: any) {
-            onError("Failed to load articles.");
+            onError("Failed to load content.");
+            console.error(err);
         } finally {
             setLoading(false);
         }
-    }, [feed, unreadOnly, onError]);
+    }, [feed, unreadOnly, onError, USE_CLUSTERS]);
 
     const loadMore = async () => {
-        if (!feed || loadingMore || !hasMore || items.length === 0) return;
+        if (
+            !feed ||
+            loadingMore ||
+            !hasMore ||
+            (items.length === 0 && clusters.length === 0)
+        )
+            return;
         setLoadingMore(true);
-        const lastItem = items[items.length - 1];
 
         try {
+            let cursor = "";
+            if (USE_CLUSTERS && clusters.length > 0) {
+                cursor = clusters[clusters.length - 1].sort_date;
+            } else if (!USE_CLUSTERS && items.length > 0) {
+                const lastItem = items[items.length - 1];
+                cursor = lastItem.published_at;
+            }
+
             const params = {
                 limit: 20,
-                before: lastItem.published_at || undefined,
+                before: cursor || undefined,
                 unread_only: unreadOnly,
             };
-            const data =
-                feed.id === "all"
-                    ? await api.getAllItems(params)
-                    : await api.getFeedItems(feed.id, params);
 
-            if (data.length === 0) {
-                setHasMore(false);
+            if (USE_CLUSTERS) {
+                const data =
+                    feed.id === "all"
+                        ? await api.getGlobalClusters(params)
+                        : await api.getFeedClusters(feed.id, params);
+
+                if (data.length === 0) {
+                    setHasMore(false);
+                } else {
+                    setClusters((prev) => [...prev, ...data]);
+                    if (data.length < 20) setHasMore(false);
+                }
             } else {
-                setItems((prev) => [...prev, ...data]);
-                if (data.length < 20) setHasMore(false);
+                const data =
+                    feed.id === "all"
+                        ? await api.getAllItems(params)
+                        : await api.getFeedItems(feed.id, params);
+
+                if (data.length === 0) {
+                    setHasMore(false);
+                } else {
+                    setItems((prev) => [...prev, ...data]);
+                    if (data.length < 20) setHasMore(false);
+                }
             }
         } catch (err: any) {
             onError(`Could not load more items: ${err.message}`);
@@ -134,27 +181,51 @@ export function ArticleList({
         );
         if (observerTarget.current) observer.observe(observerTarget.current);
         return () => observer.disconnect();
-    }, [hasMore, items, loading, loadingMore]);
+    }, [hasMore, items, clusters, loading, loadingMore]);
 
     const handleSync = async () => {
         if (!feed || isSyncing) return;
         setIsSyncing(true);
         try {
             const params = { limit: 20, unread_only: unreadOnly };
-            const newData: Item[] =
-                feed.id === "all"
-                    ? await api.getAllItems(params)
-                    : await api.getFeedItems(feed.id, params);
 
-            setItems((prev) => {
-                const existingIds = new Set(prev.map((i) => i.id));
-                const unique = newData.filter((i) => !existingIds.has(i.id));
-                if (unique.length > 0 && scrollRef.current) {
-                    lastScrollHeight.current = scrollRef.current.scrollHeight;
-                    return [...unique, ...prev];
-                }
-                return prev;
-            });
+            if (USE_CLUSTERS) {
+                const newData: Cluster[] =
+                    feed.id === "all"
+                        ? await api.getGlobalClusters(params)
+                        : await api.getFeedClusters(feed.id, params);
+
+                setClusters((prev) => {
+                    const existingIds = new Set(prev.map((c) => c.id));
+                    const unique = newData.filter(
+                        (c) => !existingIds.has(c.id),
+                    );
+                    if (unique.length > 0 && scrollRef.current) {
+                        lastScrollHeight.current =
+                            scrollRef.current.scrollHeight;
+                        return [...unique, ...prev];
+                    }
+                    return prev;
+                });
+            } else {
+                const newData: Item[] =
+                    feed.id === "all"
+                        ? await api.getAllItems(params)
+                        : await api.getFeedItems(feed.id, params);
+
+                setItems((prev) => {
+                    const existingIds = new Set(prev.map((i) => i.id));
+                    const unique = newData.filter(
+                        (i) => !existingIds.has(i.id),
+                    );
+                    if (unique.length > 0 && scrollRef.current) {
+                        lastScrollHeight.current =
+                            scrollRef.current.scrollHeight;
+                        return [...unique, ...prev];
+                    }
+                    return prev;
+                });
+            }
         } catch (e) {
             onError("Sync failed.");
         } finally {
@@ -162,33 +233,82 @@ export function ArticleList({
         }
     };
 
-    const handleUpdateStatus = async (
+    const handleUpdateItemStatus = async (
         itemId: string,
         updates: { is_read?: boolean; liked?: number },
     ) => {
         try {
             await api.updateItemStatus(itemId, updates);
-            setItems((prev) =>
-                prev.map((i) => (i.id === itemId ? { ...i, ...updates } : i)),
-            );
+
+            if (USE_CLUSTERS) {
+                setClusters((prev) =>
+                    prev.map((c) => {
+                        const itemExists = c.items.some((i) => i.id === itemId);
+                        if (!itemExists) return c;
+
+                        return {
+                            ...c,
+                            items: c.items.map((i) =>
+                                i.id === itemId ? { ...i, ...updates } : i,
+                            ),
+                        };
+                    }),
+                );
+            } else {
+                setItems((prev) =>
+                    prev.map((i) =>
+                        i.id === itemId ? { ...i, ...updates } : i,
+                    ),
+                );
+            }
+
             if (updates.is_read !== undefined) onItemRead();
         } catch (e) {
             onError("Failed to update status");
         }
     };
 
-    const handleLikeToggle = async (item: Item, value: number) => {
+    const handleUpdateClusterStatus = async (
+        clusterId: string,
+        updates: { is_read?: boolean; liked?: number },
+    ) => {
+        try {
+            await api.updateClusterStatus(clusterId, updates);
+
+            setClusters((prev) =>
+                prev.map((c) => {
+                    if (c.id === clusterId) {
+                        const updatedItems = c.items.map((i) => ({
+                            ...i,
+                            ...updates,
+                        }));
+                        return { ...c, items: updatedItems };
+                    }
+                    return c;
+                }),
+            );
+            if (updates.is_read !== undefined) onItemRead();
+        } catch (e) {
+            onError("Failed to update cluster status");
+        }
+    };
+
+    const handleLikeToggleItem = async (item: Item, value: number) => {
         const newValue = item.liked === value ? 0 : value;
-        await handleUpdateStatus(item.id, { liked: newValue, is_read: true });
+        await handleUpdateItemStatus(item.id, {
+            liked: newValue,
+            is_read: true,
+        });
     };
 
     useEffect(() => {
         loadItems();
     }, [loadItems, refreshKey]);
 
+    const isEmpty = USE_CLUSTERS ? clusters.length === 0 : items.length === 0;
+
     return (
         <div className="flex-1 h-full flex flex-col bg-brand-surface">
-            {/* Header: Hidden on Mobile UI (uses TopBar), Visible on Desktop UI */}
             <header
                 className={`${isMobile ? "hidden" : "flex"} px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10 justify-between items-start gap-4`}
             >
@@ -255,12 +375,23 @@ export function ArticleList({
                                 onConfirm: async () => {
                                     try {
                                         const since = "1970-01-01T00:00:00Z";
-                                        feed.id === "all"
-                                            ? await api.markAllRead(since)
-                                            : await api.markFeedRead(
-                                                  feed.id,
-                                                  since,
-                                              );
+                                        if (USE_CLUSTERS) {
+                                            if (feed.id === "all") {
+                                                await api.markAllRead(since);
+                                            } else {
+                                                await api.markFeedClustersRead(
+                                                    feed.id,
+                                                    since,
+                                                );
+                                            }
+                                        } else {
+                                            feed.id === "all"
+                                                ? await api.markAllRead(since)
+                                                : await api.markFeedRead(
+                                                      feed.id,
+                                                      since,
+                                                  );
+                                        }
                                         loadItems();
                                         onItemRead();
                                     } catch (e) {
@@ -281,28 +412,46 @@ export function ArticleList({
                 ref={scrollRef}
                 className={`flex-1 overflow-y-auto ${isMobile ? "p-4 space-y-4" : "p-8 space-y-6"}`}
             >
-                {items.length === 0 && !loading ? (
+                {isEmpty && !loading ? (
                     <EmptyState className="py-20">
                         No articles found.
                     </EmptyState>
                 ) : (
-                    items.map((item) => {
-                        const primaryFeedId =
-                            item.feed_ids.find((id) => feedMap.has(id)) ||
-                            item.feed_ids[0];
-                        const feedName =
-                            feedMap.get(primaryFeedId) || "Subscription";
+                    <>
+                        {USE_CLUSTERS &&
+                            clusters.map((cluster) => (
+                                <ClusterItem
+                                    key={cluster.id}
+                                    cluster={cluster}
+                                    feedMap={feedMap}
+                                    onUpdateClusterStatus={
+                                        handleUpdateClusterStatus
+                                    }
+                                    onUpdateItemStatus={handleUpdateItemStatus}
+                                />
+                            ))}
 
-                        return (
-                            <ArticleItem
-                                key={item.id}
-                                item={item}
-                                feedName={feedName}
-                                onUpdateStatus={handleUpdateStatus}
-                                onLikeToggle={handleLikeToggle}
-                            />
-                        );
-                    })
+                        {!USE_CLUSTERS &&
+                            items.map((item) => {
+                                const primaryFeedId =
+                                    item.feed_ids.find((id) =>
+                                        feedMap.has(id),
+                                    ) || item.feed_ids[0];
+                                const feedName =
+                                    feedMap.get(primaryFeedId) ||
+                                    "Subscription";
+
+                                return (
+                                    <ArticleItem
+                                        key={item.id}
+                                        item={item}
+                                        feedName={feedName}
+                                        onUpdateStatus={handleUpdateItemStatus}
+                                        onLikeToggle={handleLikeToggleItem}
+                                    />
+                                );
+                            })}
+                    </>
                 )}
                 <div
                     ref={observerTarget}
