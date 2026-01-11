@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { data } from "react-router";
 import { AuthProvider, useAuth } from "~/lib/auth-context";
-import { AUTH_API_URL, api } from "~/lib/api";
+import { BASE_URL, api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
 import type { Route } from "./+types/home";
 import { MobileLayout } from "~/components/Home/MobileLayout";
@@ -10,7 +10,7 @@ import { DesktopLayout } from "~/components/Home/DesktopLayout";
 export async function loader({ request }: Route.LoaderArgs) {
     const cookie = request.headers.get("Cookie");
     try {
-        const response = await fetch(`${AUTH_API_URL}/me`, {
+        const response = await fetch(`${BASE_URL}/auth/me`, {
             headers: {
                 Cookie: cookie || "",
                 "Content-Type": "application/json",

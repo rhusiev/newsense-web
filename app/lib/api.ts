@@ -1,7 +1,6 @@
-const AUTH_URL = "http://localhost:3000";
-const FEEDS_URL = "http://localhost:3001";
-const ITEMS_URL = "http://localhost:3002";
-export const AUTH_API_URL = AUTH_URL;
+const PROD_URL = import.meta.env.API_URL || "http://localhost";
+
+export const BASE_URL = import.meta.env.PROD ? PROD_URL : "http://localhost";
 
 async function handleResponse(response: Response) {
     if (response.status === 204) return null;
@@ -27,55 +26,55 @@ async function fetchClient(url: string, options: RequestInit = {}) {
 }
 
 export const api = {
-    me: (headers?: HeadersInit) => fetchClient(`${AUTH_URL}/me`, { headers }),
+    me: (headers?: HeadersInit) => fetchClient(`${BASE_URL}/auth/me`, { headers }),
     login: (data: any) =>
-        fetchClient(`${AUTH_URL}/login`, {
+        fetchClient(`${BASE_URL}/auth/login`, {
             method: "POST",
             body: JSON.stringify(data),
         }),
     register: (data: any) =>
-        fetchClient(`${AUTH_URL}/register`, {
+        fetchClient(`${BASE_URL}/auth/register`, {
             method: "POST",
             body: JSON.stringify(data),
         }),
-    logout: () => fetchClient(`${AUTH_URL}/logout`, { method: "POST" }),
+    logout: () => fetchClient(`${BASE_URL}/auth/logout`, { method: "POST" }),
 
-    getSubscribed: () => fetchClient(`${FEEDS_URL}/feeds/subscribed`),
-    getOwned: () => fetchClient(`${FEEDS_URL}/feeds/owned`),
-    searchFeeds: (q: string) => fetchClient(`${FEEDS_URL}/feeds/search?q=${q}`),
+    getSubscribed: () => fetchClient(`${BASE_URL}/feeds/subscribed`),
+    getOwned: () => fetchClient(`${BASE_URL}/feeds/owned`),
+    searchFeeds: (q: string) => fetchClient(`${BASE_URL}/feeds/search?q=${q}`),
     subscribe: (id: string) =>
-        fetchClient(`${FEEDS_URL}/feeds/${id}/subscription`, {
+        fetchClient(`${BASE_URL}/feeds/${id}/subscription`, {
             method: "POST",
         }),
     unsubscribe: (id: string) =>
-        fetchClient(`${FEEDS_URL}/feeds/${id}/subscription`, {
+        fetchClient(`${BASE_URL}/feeds/${id}/subscription`, {
             method: "DELETE",
         }),
     deleteFeed: (id: string) =>
-        fetchClient(`${FEEDS_URL}/feeds/${id}`, { method: "DELETE" }),
+        fetchClient(`${BASE_URL}/feeds/${id}`, { method: "DELETE" }),
     createFeed: (data: any) =>
-        fetchClient(`${FEEDS_URL}/feeds`, {
+        fetchClient(`${BASE_URL}/feeds`, {
             method: "POST",
             body: JSON.stringify(data),
         }),
     updateFeed: (id: string, data: any) =>
-        fetchClient(`${FEEDS_URL}/feeds/${id}`, {
+        fetchClient(`${BASE_URL}/feeds/${id}`, {
             method: "PUT",
             body: JSON.stringify(data),
         }),
     getFeedSubscribers: (id: string) =>
-        fetchClient(`${FEEDS_URL}/feeds/${id}/subscribers/count`),
+        fetchClient(`${BASE_URL}/feeds/${id}/subscribers/count`),
 
-    getUnreadCounts: () => fetchClient(`${ITEMS_URL}/items/unread-counts`),
+    getUnreadCounts: () => fetchClient(`${BASE_URL}/items/unread-counts`),
 
     markAllRead: (since: string) =>
-        fetchClient(`${ITEMS_URL}/items/mark-read`, {
+        fetchClient(`${BASE_URL}/items/mark-read`, {
             method: "POST",
             body: JSON.stringify({ since }),
         }),
 
     markFeedRead: (feedId: string, since: string) =>
-        fetchClient(`${ITEMS_URL}/items/feed/${feedId}/mark-read`, {
+        fetchClient(`${BASE_URL}/items/feed/${feedId}/mark-read`, {
             method: "POST",
             body: JSON.stringify({ since }),
         }),
@@ -90,7 +89,7 @@ export const api = {
         if (params.limit) query.append("limit", params.limit.toString());
 
         return fetchClient(
-            `${ITEMS_URL}/items/feed/${feedId}?${query.toString()}`,
+            `${BASE_URL}/items/feed/${feedId}?${query.toString()}`,
         );
     },
 
@@ -102,14 +101,14 @@ export const api = {
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
 
-        return fetchClient(`${ITEMS_URL}/items?${query.toString()}`);
+        return fetchClient(`${BASE_URL}/items?${query.toString()}`);
     },
 
     updateItemStatus: (
         itemId: string,
         status: { is_read?: boolean; liked?: number },
     ) =>
-        fetchClient(`${ITEMS_URL}/items/${itemId}/status`, {
+        fetchClient(`${BASE_URL}/items/${itemId}/status`, {
             method: "PUT",
             body: JSON.stringify(status),
         }),
@@ -121,7 +120,7 @@ export const api = {
         if (params.before) query.append("before", params.before);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
-        return fetchClient(`${ITEMS_URL}/clusters?${query.toString()}`);
+        return fetchClient(`${BASE_URL}/clusters?${query.toString()}`);
     },
 
     getFeedClusters: (
@@ -132,24 +131,26 @@ export const api = {
         if (params.before) query.append("before", params.before);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
-        return fetchClient(`${ITEMS_URL}/clusters/feed/${feedId}?${query.toString()}`);
+        return fetchClient(
+            `${BASE_URL}/clusters/feed/${feedId}?${query.toString()}`,
+        );
     },
 
     updateClusterStatus: (
         clusterId: string,
         status: { is_read?: boolean; liked?: number },
     ) =>
-        fetchClient(`${ITEMS_URL}/clusters/${clusterId}/status`, {
+        fetchClient(`${BASE_URL}/clusters/${clusterId}/status`, {
             method: "PUT",
             body: JSON.stringify(status),
         }),
 
     markFeedClustersRead: (feedId: string, since: string) =>
-        fetchClient(`${ITEMS_URL}/clusters/feed/${feedId}/mark-read`, {
+        fetchClient(`${BASE_URL}/clusters/feed/${feedId}/mark-read`, {
             method: "POST",
             body: JSON.stringify({ since }),
         }),
-    
-    getClusterUnreadCount: () => 
-        fetchClient(`${ITEMS_URL}/clusters/unread-count`),
+
+    getClusterUnreadCount: () =>
+        fetchClient(`${BASE_URL}/clusters/unread-count`),
 };
