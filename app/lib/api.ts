@@ -1,4 +1,4 @@
-const PROD_URL = import.meta.env.API_URL || "http://localhost";
+const PROD_URL = import.meta.env.VITE_API_URL || "http://localhost";
 
 export const BASE_URL = import.meta.env.PROD ? PROD_URL : "http://localhost";
 
