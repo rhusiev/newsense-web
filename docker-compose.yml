@@ -1,0 +1,21 @@
+services:
+  web:
+    build: .
+    container_name: newsense_web
+    restart: unless-stopped
+    environment:
+      API_URL: https://${API_DOMAIN}
+      PORT: 3000
+    networks:
+      - internal_backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=newsense_internal_backend"
+      - "traefik.http.routers.web-app.entrypoints=web"
+      - "traefik.http.routers.web-app.rule=Host(`${WEB_DOMAIN}`)"
+      - "traefik.http.services.web-app.loadbalancer.server.port=3000"
+
+networks:
+  internal_backend:
+    external: true
+    name: newsense_internal_backend
