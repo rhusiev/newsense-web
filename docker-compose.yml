@@ -1,10 +1,12 @@
 services:
   web:
-    build: .
+    build: 
+      context: .
+      args:
+        VITE_API_URL: https://${API_DOMAIN}
     container_name: newsense_web
     restart: unless-stopped
     environment:
-      VITE_API_URL: https://${API_DOMAIN}
       PORT: 3000
     networks:
       - internal_backend
