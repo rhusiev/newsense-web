@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api } from "~/lib/api";
 import type { User } from "~/lib/types";
 import { useNavigate } from "react-router";
@@ -22,22 +22,24 @@ export function AuthProvider({
     const [user, setUser] = useState<User | null>(initialUser);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        setUser(initialUser);
+    }, [initialUser]);
+
     const login = async (data: any) => {
         const res = await api.login(data);
         setUser(res);
-        navigate(0);
     };
 
     const register = async (data: any) => {
         const res = await api.register(data);
         setUser(res);
-        navigate(0);
     };
 
     const logout = async () => {
         await api.logout();
         setUser(null);
-        navigate(0);
+        navigate("/");
     };
 
     return (
