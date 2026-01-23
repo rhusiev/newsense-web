@@ -7,6 +7,12 @@ import type { Route } from "./+types/home";
 import { MobileLayout } from "~/components/Home/MobileLayout";
 import { DesktopLayout } from "~/components/Home/DesktopLayout";
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+    return [{ title: "Newsense" }];
+};
+
 export async function loader({ request }: Route.LoaderArgs) {
     const cookie = request.headers.get("Cookie");
     try {
