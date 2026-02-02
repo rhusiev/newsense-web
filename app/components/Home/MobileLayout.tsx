@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { Feed, User } from "~/lib/types";
 import { MobileTopBar, MobileBottomNav } from "~/components/MobileUI";
 import { ArticleList } from "~/components/ArticleList";

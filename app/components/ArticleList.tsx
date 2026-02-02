@@ -41,29 +41,32 @@ export function ArticleList({
     showSidebarToggle = false,
     onSidebarToggle,
 }: ArticleListProps) {
-    const {
-        filterPrediction,
-        filterPredictionThreshold,
-        useClusters,
-    } = useSettings();
+    const { filterPrediction, filterPredictionThreshold, useClusters } =
+        useSettings();
 
-    const filterItems = useCallback((items: Item[]) => {
-        if (!filterPrediction) return items;
-        return items.filter(
-            (item) =>
-                (item.prediction_score ?? 1) >= filterPredictionThreshold
-        );
-    }, [filterPrediction, filterPredictionThreshold]);
+    const filterItems = useCallback(
+        (items: Item[]) => {
+            if (!filterPrediction) return items;
+            return items.filter(
+                (item) =>
+                    (item.prediction_score ?? 1) >= filterPredictionThreshold,
+            );
+        },
+        [filterPrediction, filterPredictionThreshold],
+    );
 
-    const filterClusters = useCallback((clusters: Cluster[]) => {
-        if (!filterPrediction) return clusters;
-        return clusters
-            .map((cluster) => ({
-                ...cluster,
-                items: filterItems(cluster.items),
-            }))
-            .filter((cluster) => cluster.items.length > 0);
-    }, [filterPrediction, filterItems]);
+    const filterClusters = useCallback(
+        (clusters: Cluster[]) => {
+            if (!filterPrediction) return clusters;
+            return clusters
+                .map((cluster) => ({
+                    ...cluster,
+                    items: filterItems(cluster.items),
+                }))
+                .filter((cluster) => cluster.items.length > 0);
+        },
+        [filterPrediction, filterItems],
+    );
 
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
 
@@ -105,7 +108,6 @@ export function ArticleList({
                         ? await api.getGlobalClusters(params)
                         : await api.getFeedClusters(feed.id, params);
                 const filtered = filterClusters(data);
-                // Deduplicate by ID just in case
                 const unique = filtered.filter(
                     (c, index, self) =>
                         index === self.findIndex((t) => t.id === c.id),
@@ -119,7 +121,6 @@ export function ArticleList({
                         ? await api.getAllItems(params)
                         : await api.getFeedItems(feed.id, params);
                 const filtered = filterItems(data);
-                // Deduplicate by ID just in case
                 const unique = filtered.filter(
                     (i, index, self) =>
                         index === self.findIndex((t) => t.id === i.id),
@@ -424,4 +425,3 @@ export function ArticleList({
         </div>
     );
 }
-
