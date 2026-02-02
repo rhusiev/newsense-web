@@ -8,11 +8,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Item, Cluster } from "~/lib/types";
-import {
-    FILTER_PREDICTION,
-    FILTER_PREDICTION_THRESHOLD,
-    USE_CLUSTERS,
-} from "~/lib/constants";
+import { useSettings } from "~/lib/settings-context";
 import { ArticleItem } from "./ArticleItem";
 import { ClusterItem } from "./ClusterItem";
 import { EmptyState } from "./ui/EmptyState";
@@ -45,23 +41,29 @@ export function ArticleList({
     showSidebarToggle = false,
     onSidebarToggle,
 }: ArticleListProps) {
-    const filterItems = (items: Item[]) => {
-        if (!FILTER_PREDICTION) return items;
+    const {
+        filterPrediction,
+        filterPredictionThreshold,
+        useClusters,
+    } = useSettings();
+
+    const filterItems = useCallback((items: Item[]) => {
+        if (!filterPrediction) return items;
         return items.filter(
             (item) =>
-                (item.prediction_score ?? 1) >= FILTER_PREDICTION_THRESHOLD
+                (item.prediction_score ?? 1) >= filterPredictionThreshold
         );
-    };
+    }, [filterPrediction, filterPredictionThreshold]);
 
-    const filterClusters = (clusters: Cluster[]) => {
-        if (!FILTER_PREDICTION) return clusters;
+    const filterClusters = useCallback((clusters: Cluster[]) => {
+        if (!filterPrediction) return clusters;
         return clusters
             .map((cluster) => ({
                 ...cluster,
                 items: filterItems(cluster.items),
             }))
             .filter((cluster) => cluster.items.length > 0);
-    };
+    }, [filterPrediction, filterItems]);
 
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
 
@@ -97,7 +99,7 @@ export function ArticleList({
         try {
             const params = { limit: 20, unread_only: unreadOnly };
 
-            if (USE_CLUSTERS) {
+            if (useClusters) {
                 const data =
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
@@ -120,7 +122,7 @@ export function ArticleList({
         } finally {
             setLoading(false);
         }
-    }, [feed, unreadOnly, onError, USE_CLUSTERS]);
+    }, [feed, unreadOnly, onError, useClusters, filterClusters, filterItems]);
 
     const loadMore = async () => {
         if (
@@ -134,9 +136,9 @@ export function ArticleList({
 
         try {
             let cursor = "";
-            if (USE_CLUSTERS && clusters.length > 0) {
+            if (useClusters && clusters.length > 0) {
                 cursor = clusters[clusters.length - 1].sort_date;
-            } else if (!USE_CLUSTERS && items.length > 0) {
+            } else if (!useClusters && items.length > 0) {
                 const lastItem = items[items.length - 1];
                 cursor = lastItem.published_at;
             }
@@ -147,7 +149,7 @@ export function ArticleList({
                 unread_only: unreadOnly,
             };
 
-            if (USE_CLUSTERS) {
+            if (useClusters) {
                 const data =
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
@@ -205,7 +207,7 @@ export function ArticleList({
         try {
             const params = { limit: 20, unread_only: unreadOnly };
 
-            if (USE_CLUSTERS) {
+            if (useClusters) {
                 const data: Cluster[] =
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
@@ -258,7 +260,7 @@ export function ArticleList({
         try {
             await api.updateItemStatus(itemId, updates);
 
-            if (USE_CLUSTERS) {
+            if (useClusters) {
                 setClusters((prev) =>
                     prev.map((c) => {
                         const itemExists = c.items.some((i) => i.id === itemId);
@@ -323,7 +325,7 @@ export function ArticleList({
         loadItems();
     }, [loadItems, refreshKey]);
 
-    const isEmpty = USE_CLUSTERS ? clusters.length === 0 : items.length === 0;
+    const isEmpty = useClusters ? clusters.length === 0 : items.length === 0;
 
     return (
         <div className="flex-1 h-full flex flex-col bg-brand-surface">
@@ -340,7 +342,7 @@ export function ArticleList({
                 onError={onError}
                 loadItems={loadItems}
                 onItemRead={onItemRead}
-                USE_CLUSTERS={USE_CLUSTERS}
+                useClusters={useClusters}
             />
 
             <div
@@ -353,7 +355,7 @@ export function ArticleList({
                     </EmptyState>
                 ) : (
                     <>
-                        {USE_CLUSTERS &&
+                        {useClusters &&
                             clusters.map((cluster) => (
                                 <ClusterItem
                                     key={cluster.id}
@@ -366,7 +368,7 @@ export function ArticleList({
                                 />
                             ))}
 
-                        {!USE_CLUSTERS &&
+                        {!useClusters &&
                             items.map((item) => {
                                 const primaryFeedId =
                                     item.feed_ids.find((id) =>
@@ -398,3 +400,4 @@ export function ArticleList({
         </div>
     );
 }
+

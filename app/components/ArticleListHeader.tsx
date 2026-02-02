@@ -15,7 +15,7 @@ interface ArticleListHeaderProps {
     onError: (msg: string) => void;
     loadItems: () => void;
     onItemRead: () => void;
-    USE_CLUSTERS: boolean;
+    useClusters: boolean;
 }
 
 export function ArticleListHeader({
@@ -31,7 +31,7 @@ export function ArticleListHeader({
     onError,
     loadItems,
     onItemRead,
-    USE_CLUSTERS,
+    useClusters,
 }: ArticleListHeaderProps) {
     const handleMarkAllRead = () => {
         triggerConfirm({
@@ -40,7 +40,7 @@ export function ArticleListHeader({
             onConfirm: async () => {
                 try {
                     const since = "1970-01-01T00:00:00Z";
-                    if (USE_CLUSTERS) {
+                    if (useClusters) {
                         if (feed.id === "all") {
                             await api.markAllRead(since);
                         } else {

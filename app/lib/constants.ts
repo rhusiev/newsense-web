@@ -1,3 +1,3 @@
-export const FILTER_PREDICTION = true;
-export const FILTER_PREDICTION_THRESHOLD = -0.7;
-export const USE_CLUSTERS = true;
+export const DEFAULT_FILTER_PREDICTION = true;
+export const DEFAULT_FILTER_PREDICTION_THRESHOLD = -0.7;
+export const DEFAULT_USE_CLUSTERS = true;

@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { data } from "react-router";
 import { AuthProvider, useAuth } from "~/lib/auth-context";
+import { SettingsProvider } from "~/lib/settings-context";
 import { BASE_URL, api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
 import type { Route } from "./+types/home";
@@ -38,7 +39,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
     return (
         <AuthProvider initialUser={user}>
-            <HomeContent />
+            <SettingsProvider>
+                <HomeContent />
+            </SettingsProvider>
         </AuthProvider>
     );
 }
