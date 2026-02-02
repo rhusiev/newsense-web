@@ -104,7 +104,13 @@ export function ArticleList({
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
                         : await api.getFeedClusters(feed.id, params);
-                setClusters(filterClusters(data));
+                const filtered = filterClusters(data);
+                // Deduplicate by ID just in case
+                const unique = filtered.filter(
+                    (c, index, self) =>
+                        index === self.findIndex((t) => t.id === c.id),
+                );
+                setClusters(unique);
                 setHasMore(data.length === 20);
                 setItems([]);
             } else {
@@ -112,7 +118,13 @@ export function ArticleList({
                     feed.id === "all"
                         ? await api.getAllItems(params)
                         : await api.getFeedItems(feed.id, params);
-                setItems(filterItems(data));
+                const filtered = filterItems(data);
+                // Deduplicate by ID just in case
+                const unique = filtered.filter(
+                    (i, index, self) =>
+                        index === self.findIndex((t) => t.id === i.id),
+                );
+                setItems(unique);
                 setHasMore(data.length === 20);
                 setClusters([]);
             }
@@ -159,7 +171,13 @@ export function ArticleList({
                     setHasMore(false);
                 } else {
                     const filteredData = filterClusters(data);
-                    setClusters((prev) => [...prev, ...filteredData]);
+                    setClusters((prev) => {
+                        const existingIds = new Set(prev.map((c) => c.id));
+                        const unique = filteredData.filter(
+                            (c) => !existingIds.has(c.id),
+                        );
+                        return [...prev, ...unique];
+                    });
                     if (data.length < 20) setHasMore(false);
                 }
             } else {
@@ -172,7 +190,13 @@ export function ArticleList({
                     setHasMore(false);
                 } else {
                     const filteredData = filterItems(data);
-                    setItems((prev) => [...prev, ...filteredData]);
+                    setItems((prev) => {
+                        const existingIds = new Set(prev.map((i) => i.id));
+                        const unique = filteredData.filter(
+                            (i) => !existingIds.has(i.id),
+                        );
+                        return [...prev, ...unique];
+                    });
                     if (data.length < 20) setHasMore(false);
                 }
             }
