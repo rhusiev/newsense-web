@@ -8,6 +8,11 @@ import {
 import { Loader2 } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Item, Cluster } from "~/lib/types";
+import {
+    FILTER_PREDICTION,
+    FILTER_PREDICTION_THRESHOLD,
+    USE_CLUSTERS,
+} from "~/lib/constants";
 import { ArticleItem } from "./ArticleItem";
 import { ClusterItem } from "./ClusterItem";
 import { EmptyState } from "./ui/EmptyState";
@@ -40,7 +45,23 @@ export function ArticleList({
     showSidebarToggle = false,
     onSidebarToggle,
 }: ArticleListProps) {
-    const USE_CLUSTERS = true;
+    const filterItems = (items: Item[]) => {
+        if (!FILTER_PREDICTION) return items;
+        return items.filter(
+            (item) =>
+                (item.prediction_score ?? 1) >= FILTER_PREDICTION_THRESHOLD
+        );
+    };
+
+    const filterClusters = (clusters: Cluster[]) => {
+        if (!FILTER_PREDICTION) return clusters;
+        return clusters
+            .map((cluster) => ({
+                ...cluster,
+                items: filterItems(cluster.items),
+            }))
+            .filter((cluster) => cluster.items.length > 0);
+    };
 
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
 
@@ -81,7 +102,7 @@ export function ArticleList({
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
                         : await api.getFeedClusters(feed.id, params);
-                setClusters(data);
+                setClusters(filterClusters(data));
                 setHasMore(data.length === 20);
                 setItems([]);
             } else {
@@ -89,7 +110,7 @@ export function ArticleList({
                     feed.id === "all"
                         ? await api.getAllItems(params)
                         : await api.getFeedItems(feed.id, params);
-                setItems(data);
+                setItems(filterItems(data));
                 setHasMore(data.length === 20);
                 setClusters([]);
             }
@@ -135,7 +156,8 @@ export function ArticleList({
                 if (data.length === 0) {
                     setHasMore(false);
                 } else {
-                    setClusters((prev) => [...prev, ...data]);
+                    const filteredData = filterClusters(data);
+                    setClusters((prev) => [...prev, ...filteredData]);
                     if (data.length < 20) setHasMore(false);
                 }
             } else {
@@ -147,7 +169,8 @@ export function ArticleList({
                 if (data.length === 0) {
                     setHasMore(false);
                 } else {
-                    setItems((prev) => [...prev, ...data]);
+                    const filteredData = filterItems(data);
+                    setItems((prev) => [...prev, ...filteredData]);
                     if (data.length < 20) setHasMore(false);
                 }
             }
@@ -183,10 +206,11 @@ export function ArticleList({
             const params = { limit: 20, unread_only: unreadOnly };
 
             if (USE_CLUSTERS) {
-                const newData: Cluster[] =
+                const data: Cluster[] =
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
                         : await api.getFeedClusters(feed.id, params);
+                const newData = filterClusters(data);
 
                 setClusters((prev) => {
                     const existingIds = new Set(prev.map((c) => c.id));
@@ -201,10 +225,11 @@ export function ArticleList({
                     return prev;
                 });
             } else {
-                const newData: Item[] =
+                const data: Item[] =
                     feed.id === "all"
                         ? await api.getAllItems(params)
                         : await api.getFeedItems(feed.id, params);
+                const newData = filterItems(data);
 
                 setItems((prev) => {
                     const existingIds = new Set(prev.map((i) => i.id));

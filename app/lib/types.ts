@@ -20,6 +20,7 @@ export interface Item {
     is_read: boolean;
     liked: number; // 0, 1, or -1
     cluster_id: string | null;
+    prediction_score?: number;
 }
 
 export interface Cluster {
