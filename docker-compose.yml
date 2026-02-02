@@ -4,6 +4,7 @@ services:
       context: .
       args:
         VITE_API_URL: https://${API_DOMAIN}
+    image: ghcr.io/rhusiev/newsense-web:${VERSION:-latest}
     container_name: newsense_web
     restart: unless-stopped
     environment:
