@@ -8,7 +8,12 @@ async function handleResponse(response: Response) {
         const errorBody = await response.text().catch(() => "");
         throw new Error(errorBody || `API Error: ${response.statusText}`);
     }
-    return response.json();
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+        return response.json();
+    }
+    return response.text();
 }
 
 async function fetchClient(url: string, options: RequestInit = {}) {
@@ -158,4 +163,22 @@ export const api = {
 
     getClusterUnreadCount: () =>
         fetchClient(`${BASE_URL}/clusters/unread-count`),
+
+    checkAdmin: () => fetchClient(`${BASE_URL}/admin`),
+    getAdminCodes: () => fetchClient(`${BASE_URL}/admin/codes`),
+    getAdminCodesCount: () => fetchClient(`${BASE_URL}/admin/codes/count`),
+    generateAdminCodes: (count: number) =>
+        fetchClient(`${BASE_URL}/admin/codes/generate`, {
+            method: "POST",
+            body: JSON.stringify({ count }),
+        }),
+    createAdminCode: (code: string) =>
+        fetchClient(`${BASE_URL}/admin/codes`, {
+            method: "POST",
+            body: JSON.stringify({ code }),
+        }),
+    deleteAdminCode: (code: string) =>
+        fetchClient(`${BASE_URL}/admin/codes/${code}`, {
+            method: "DELETE",
+        }),
 };

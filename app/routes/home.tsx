@@ -286,6 +286,7 @@ function HomeContent() {
         setSettingsOpen,
         confirmConfig,
         setConfirmConfig,
+        triggerConfirm,
         error,
         setError,
         onSuccess: () => {

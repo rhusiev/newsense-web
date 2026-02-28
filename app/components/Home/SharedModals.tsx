@@ -15,6 +15,7 @@ interface SharedModalsProps {
     setSettingsOpen: (val: boolean) => void;
     confirmConfig: any;
     setConfirmConfig: (val: any) => void;
+    triggerConfirm: (config: any) => void;
     error: string | null;
     setError: (msg: string | null) => void;
     onSuccess: () => void;
@@ -32,6 +33,7 @@ export function SharedModals({
     setSettingsOpen,
     confirmConfig,
     setConfirmConfig,
+    triggerConfirm,
     error,
     setError,
     onSuccess,
@@ -77,6 +79,7 @@ export function SharedModals({
             <SettingsModal
                 isOpen={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
+                triggerConfirm={triggerConfirm}
             />
         </>
     );
