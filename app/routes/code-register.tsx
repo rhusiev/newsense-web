@@ -60,7 +60,6 @@ function CodeRegisterContent() {
         try {
             await registerWithCode(code, { username, password });
             setSuccess(true);
-            setTimeout(() => navigate("/"), 2000);
         } catch (err: any) {
             setError(err.message || "Registration failed");
         } finally {
