@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "~/lib/auth-context";
 import { Modal } from "./ui/Modal";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
+import { LogIn, UserPlus } from "lucide-react";
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -21,6 +22,15 @@ export function AuthModal({
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (isOpen) {
+            setView(initialView);
+            setError("");
+            setUsername("");
+            setPassword("");
+        }
+    }, [isOpen, initialView]);
 
     if (!isOpen) return null;
 
@@ -49,6 +59,29 @@ export function AuthModal({
             onClose={onClose}
             title={view === "login" ? "Welcome Back" : "Join Reader"}
         >
+            <div className="px-6 pt-6">
+                <div className="flex gap-2 w-full">
+                    <button
+                        className={`flex-1 p-3 rounded-lg transition-all flex items-center justify-center gap-2 font-medium text-sm
+                            ${view === "login" ? "bg-brand-surface-active text-brand-900" : "text-gray-400 hover:text-brand-900 hover:bg-gray-50"}
+                        `}
+                        onClick={() => setView("login")}
+                    >
+                        <LogIn size={18} />
+                        <span>Sign In</span>
+                    </button>
+                    <button
+                        className={`flex-1 p-3 rounded-lg transition-all flex items-center justify-center gap-2 font-medium text-sm
+                            ${view === "register" ? "bg-brand-surface-active text-brand-900" : "text-gray-400 hover:text-brand-900 hover:bg-gray-50"}
+                        `}
+                        onClick={() => setView("register")}
+                    >
+                        <UserPlus size={18} />
+                        <span>Register</span>
+                    </button>
+                </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 {error && (
                     <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">
@@ -80,19 +113,6 @@ export function AuthModal({
                     {view === "login" ? "Sign In" : "Create Account"}
                 </Button>
             </form>
-
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-600">
-                <button
-                    onClick={() =>
-                        setView(view === "login" ? "register" : "login")
-                    }
-                    className="text-brand-600 font-medium hover:underline"
-                >
-                    {view === "login"
-                        ? "Don't have an account? Sign up"
-                        : "Already have an account? Log in"}
-                </button>
-            </div>
         </Modal>
     );
 }

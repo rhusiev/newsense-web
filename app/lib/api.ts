@@ -37,6 +37,11 @@ export const api = {
             method: "POST",
             body: JSON.stringify(data),
         }),
+    registerWithCode: (code: string, data: any) =>
+        fetchClient(`${BASE_URL}/auth/register/${code}`, {
+            method: "POST",
+            body: JSON.stringify(data),
+        }),
     logout: () => fetchClient(`${BASE_URL}/auth/logout`, { method: "POST" }),
 
     getSubscribed: () => fetchClient(`${BASE_URL}/feeds/subscribed`),

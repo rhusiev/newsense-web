@@ -7,6 +7,7 @@ interface AuthContextType {
     user: User | null;
     login: (data: any) => Promise<void>;
     register: (data: any) => Promise<void>;
+    registerWithCode: (code: string, data: any) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -36,6 +37,11 @@ export function AuthProvider({
         setUser(res);
     };
 
+    const registerWithCode = async (code: string, data: any) => {
+        const res = await api.registerWithCode(code, data);
+        setUser(res);
+    };
+
     const logout = async () => {
         await api.logout();
         setUser(null);
@@ -43,7 +49,9 @@ export function AuthProvider({
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout }}>
+        <AuthContext.Provider
+            value={{ user, login, register, registerWithCode, logout }}
+        >
             {children}
         </AuthContext.Provider>
     );
