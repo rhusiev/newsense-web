@@ -167,15 +167,20 @@ export const api = {
     checkAdmin: () => fetchClient(`${BASE_URL}/admin`),
     getAdminCodes: () => fetchClient(`${BASE_URL}/admin/codes`),
     getAdminCodesCount: () => fetchClient(`${BASE_URL}/admin/codes/count`),
-    generateAdminCodes: (count: number) =>
+    generateAdminCodes: (count: number, uses?: number) =>
         fetchClient(`${BASE_URL}/admin/codes/generate`, {
             method: "POST",
-            body: JSON.stringify({ count }),
+            body: JSON.stringify({ count, uses }),
         }),
-    createAdminCode: (code: string) =>
+    createAdminCode: (code: string, uses?: number) =>
         fetchClient(`${BASE_URL}/admin/codes`, {
             method: "POST",
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ code, uses }),
+        }),
+    updateAdminCodeUses: (code: string, uses_left: number) =>
+        fetchClient(`${BASE_URL}/admin/codes/${code}`, {
+            method: "PATCH",
+            body: JSON.stringify({ uses_left }),
         }),
     deleteAdminCode: (code: string) =>
         fetchClient(`${BASE_URL}/admin/codes/${code}`, {

@@ -37,6 +37,11 @@ export interface User {
     username: string;
 }
 
+export interface AccessCode {
+    code: string;
+    uses_left: number;
+}
+
 export interface UnreadCountResponse {
     total_unread: number;
     feeds: {

@@ -4,6 +4,7 @@ import { useSettings } from "~/lib/settings-context";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { api } from "~/lib/api";
+import type { AccessCode } from "~/lib/types";
 import {
     Settings,
     Shield,
@@ -12,6 +13,8 @@ import {
     Hash,
     X,
     AlertCircle,
+    Pencil,
+    Check,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -207,12 +210,18 @@ function AdminCodesView({
 }: {
     triggerConfirm: (config: any) => void;
 }) {
-    const [codes, setCodes] = useState<any[]>([]);
+    const [codes, setCodes] = useState<AccessCode[]>([]);
     const [count, setCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [newCode, setNewCode] = useState("");
+    const [newCodeUses, setNewCodeUses] = useState("1");
     const [generateCount, setGenerateCount] = useState("5");
+    const [generateUses, setGenerateUses] = useState("1");
+    const [editingUses, setEditingUses] = useState<{
+        code: string;
+        val: string;
+    } | null>(null);
 
     const refresh = useCallback(async () => {
         setLoading(true);
@@ -221,9 +230,15 @@ function AdminCodesView({
                 api.getAdminCodes(),
                 api.getAdminCodesCount(),
             ]);
-            const codesList = Array.isArray(namesResponse)
-                ? namesResponse
-                : namesResponse.codes || [];
+            const codesList: AccessCode[] = (
+                Array.isArray(namesResponse)
+                    ? namesResponse
+                    : namesResponse.codes || []
+            ).map((item: any) =>
+                typeof item === "string"
+                    ? { code: item, uses_left: 1 }
+                    : item,
+            );
             setCodes(codesList);
             setCount(
                 typeof countResponse === "number"
@@ -251,8 +266,10 @@ function AdminCodesView({
         if (!newCode) return;
         setLoading(true);
         try {
-            await api.createAdminCode(newCode);
+            const uses = parseInt(newCodeUses);
+            await api.createAdminCode(newCode, isNaN(uses) ? undefined : uses);
             setNewCode("");
+            setNewCodeUses("1");
             await refresh();
         } catch (err: any) {
             showError(err.message || "Failed to create code");
@@ -265,10 +282,23 @@ function AdminCodesView({
         if (isNaN(n) || n <= 0) return;
         setLoading(true);
         try {
-            await api.generateAdminCodes(n);
+            const uses = parseInt(generateUses);
+            await api.generateAdminCodes(n, isNaN(uses) ? undefined : uses);
             await refresh();
         } catch (err: any) {
             showError(err.message || "Failed to generate codes");
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateUses = async (code: string, uses_left: number) => {
+        setLoading(true);
+        try {
+            await api.updateAdminCodeUses(code, uses_left);
+            setEditingUses(null);
+            await refresh();
+        } catch (err: any) {
+            showError(err.message || "Failed to update uses");
             setLoading(false);
         }
     };
@@ -308,24 +338,20 @@ function AdminCodesView({
                     document.body,
                 )}
 
-            <div className="flex flex-col md:flex-row gap-8">
-                <div className="flex-1 space-y-6">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                        Code Management
-                    </h4>
-
+            <div className="flex flex-col md:flex-row gap-12">
+                <div className="flex-1 space-y-8">
                     <div className="space-y-4">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                            Add Single Code
+                        </h4>
                         <form
                             onSubmit={handleCreateNamed}
-                            className="space-y-3"
+                            className="space-y-4"
                         >
-                            <label className="text-sm font-medium text-gray-700">
-                                Custom Code
-                            </label>
-                            <div className="flex gap-2">
+                            <div className="flex gap-4">
                                 <div className="flex-1">
                                     <Input
-                                        placeholder="Enter code name..."
+                                        label="Code Name"
                                         value={newCode}
                                         onChange={(e) =>
                                             setNewCode(e.target.value)
@@ -333,52 +359,84 @@ function AdminCodesView({
                                         className="h-10"
                                     />
                                 </div>
-                                <Button
-                                    type="submit"
-                                    disabled={loading || !newCode}
-                                    className="shrink-0 h-10 px-4"
-                                >
-                                    <Plus size={18} className="mr-2" />
-                                    <span>Add</span>
-                                </Button>
+                                <div className="w-24 shrink-0">
+                                    <Input
+                                        label="Uses"
+                                        type="number"
+                                        placeholder="1"
+                                        value={newCodeUses}
+                                        onChange={(e) =>
+                                            setNewCodeUses(e.target.value)
+                                        }
+                                        className="h-10"
+                                        min="1"
+                                    />
+                                </div>
                             </div>
+                            <Button
+                                type="submit"
+                                disabled={loading || !newCode}
+                                className="w-full h-10"
+                                variant="secondary"
+                            >
+                                <Plus size={18} className="mr-2" />
+                                <span>Add Code</span>
+                            </Button>
                         </form>
+                    </div>
 
-                        <div className="space-y-3">
-                            <label className="text-sm font-medium text-gray-700">
-                                Bulk Generation
-                            </label>
-                            <div className="flex gap-2">
+                    <div className="space-y-4 pt-4 border-gray-100">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                            Bulk Generation
+                        </h4>
+                        <div className="space-y-4">
+                            <div className="flex gap-4">
                                 <div className="flex-1">
                                     <Input
+                                        label="Number of Codes"
                                         type="number"
-                                        placeholder="Count"
+                                        placeholder="5"
                                         value={generateCount}
                                         onChange={(e) =>
                                             setGenerateCount(e.target.value)
                                         }
                                         className="h-10"
+                                        min="1"
                                     />
                                 </div>
-                                <Button
-                                    onClick={handleGenerateRandom}
-                                    disabled={loading}
-                                    className="shrink-0 h-10"
-                                    variant="secondary"
-                                >
-                                    Generate
-                                </Button>
+                                <div className="flex-1">
+                                    <Input
+                                        label="Uses each"
+                                        type="number"
+                                        placeholder="1"
+                                        value={generateUses}
+                                        onChange={(e) =>
+                                            setGenerateUses(e.target.value)
+                                        }
+                                        className="h-10"
+                                        min="1"
+                                    />
+                                </div>
                             </div>
+                            <Button
+                                onClick={handleGenerateRandom}
+                                disabled={loading}
+                                className="w-full h-10"
+                                variant="secondary"
+                            >
+                                <Hash size={18} className="mr-2" />
+                                <span>Generate Random Codes</span>
+                            </Button>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex-1 space-y-4">
                     <div className="flex items-start justify-between">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 flex-1 mr-4">
                             Active Codes
                         </h4>
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-surface-active rounded-full border border-brand-100">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-surface-active rounded-full border border-brand-100 shrink-0">
                             <Hash size={12} className="text-brand-600" />
                             <span className="text-xs font-bold text-brand-900">
                                 {count}
@@ -392,16 +450,122 @@ function AdminCodesView({
                             </div>
                         ) : (
                             codes.map((item) => {
-                                const codeVal =
-                                    typeof item === "string" ? item : item.code;
+                                const { code: codeVal, uses_left: usesLeft } =
+                                    item;
+
                                 return (
                                     <div
                                         key={codeVal}
                                         className="p-3 bg-white flex items-center justify-between hover:bg-gray-50 transition-colors group"
                                     >
-                                        <span className="font-mono text-sm text-gray-700 font-medium">
-                                            {codeVal}
-                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className="font-mono text-sm text-gray-700 font-medium">
+                                                {codeVal}
+                                            </span>
+                                            {usesLeft !== undefined && (
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    {editingUses?.code ===
+                                                    codeVal ? (
+                                                        <div className="flex items-center gap-1">
+                                                            <input
+                                                                type="number"
+                                                                className="w-16 h-6 text-xs border border-gray-200 rounded px-1 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                                                                value={
+                                                                    editingUses.val
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setEditingUses(
+                                                                        {
+                                                                            code: codeVal,
+                                                                            val: e
+                                                                                .target
+                                                                                .value,
+                                                                        },
+                                                                    )
+                                                                }
+                                                                autoFocus
+                                                                onKeyDown={(
+                                                                    e,
+                                                                ) => {
+                                                                    if (
+                                                                        e.key ===
+                                                                        "Enter"
+                                                                    ) {
+                                                                        const val =
+                                                                            parseInt(
+                                                                                editingUses.val,
+                                                                            );
+                                                                        if (
+                                                                            !isNaN(
+                                                                                val,
+                                                                            )
+                                                                        ) {
+                                                                            handleUpdateUses(
+                                                                                codeVal,
+                                                                                val,
+                                                                            );
+                                                                        }
+                                                                    } else if (
+                                                                        e.key ===
+                                                                        "Escape"
+                                                                    ) {
+                                                                        setEditingUses(
+                                                                            null,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <button
+                                                                onClick={() => {
+                                                                    const val =
+                                                                        parseInt(
+                                                                            editingUses.val,
+                                                                        );
+                                                                    if (
+                                                                        !isNaN(
+                                                                            val,
+                                                                        )
+                                                                    ) {
+                                                                        handleUpdateUses(
+                                                                            codeVal,
+                                                                            val,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                className="text-brand-600 p-0.5 hover:bg-brand-50 rounded"
+                                                            >
+                                                                <Check size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    setEditingUses(
+                                                                        null,
+                                                                    )
+                                                                }
+                                                                className="text-gray-400 p-0.5 hover:bg-gray-100 rounded"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <span
+                                                            className="text-xs text-gray-400 cursor-pointer hover:text-brand-600 flex items-center gap-1.5 group/edit"
+                                                            onClick={() =>
+                                                                setEditingUses({
+                                                                    code: codeVal,
+                                                                    val: usesLeft.toString(),
+                                                                })
+                                                            }
+                                                            title="Click to edit"
+                                                        >
+                                                            {usesLeft} uses
+                                                            remaining
+                                                            <Pencil size={12} className="opacity-0 group-hover/edit:opacity-100 transition-opacity" />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                         <button
                                             onClick={() =>
                                                 handleDelete(codeVal)
