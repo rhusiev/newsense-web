@@ -33,13 +33,13 @@ export function AuthProvider({
     };
 
     const register = async (data: any) => {
-        await api.register(data);
-        await login(data);
+        const res = await api.register(data);
+        setUser(res);
     };
 
     const registerWithCode = async (code: string, data: any) => {
-        await api.registerWithCode(code, data);
-        await login(data);
+        const res = await api.registerWithCode(code, data);
+        setUser(res);
     };
 
     const logout = async () => {
