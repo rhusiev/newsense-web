@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { data } from "react-router";
 import { AuthProvider, useAuth } from "~/lib/auth-context";
-import { SettingsProvider } from "~/lib/settings-context";
+import { SettingsProvider, useSettings } from "~/lib/settings-context";
 import { BASE_URL, api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
 import type { Route } from "./+types/home";
@@ -48,6 +48,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
 function HomeContent() {
     const { user, logout } = useAuth();
+    const { filterPrediction, filterPredictionThreshold } = useSettings();
 
     const [layoutMode, setLayoutMode] = useState<
         "loading" | "mobile" | "desktop"
@@ -125,10 +126,14 @@ function HomeContent() {
             return;
         }
         try {
+            const params = filterPrediction
+                ? { score_min: filterPredictionThreshold }
+                : {};
+
             const [subs, owns, counts] = await Promise.all([
                 api.getSubscribed(),
                 api.getOwned(),
-                api.getUnreadCounts(),
+                api.getUnreadCounts(params),
             ]);
 
             const subsWithCounts = subs.map((feed: Feed) => ({
@@ -152,7 +157,7 @@ function HomeContent() {
         } catch (e) {
             console.error(e);
         }
-    }, [user, refreshKey]);
+    }, [user, refreshKey, filterPrediction, filterPredictionThreshold]);
 
     useEffect(() => {
         loadData();

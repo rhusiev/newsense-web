@@ -75,7 +75,16 @@ export const api = {
     getFeedSubscribers: (id: string) =>
         fetchClient(`${BASE_URL}/feeds/${id}/subscribers/count`),
 
-    getUnreadCounts: () => fetchClient(`${BASE_URL}/items/unread-counts`),
+    getUnreadCounts: (
+        params: { score_min?: number; score_max?: number } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
+        return fetchClient(`${BASE_URL}/items/unread-counts?${query.toString()}`);
+    },
 
     markAllRead: (since: string) =>
         fetchClient(`${BASE_URL}/items/mark-read`, {
@@ -91,12 +100,22 @@ export const api = {
 
     getFeedItems: (
         feedId: string,
-        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+        params: {
+            before?: string;
+            unread_only?: boolean;
+            limit?: number;
+            score_min?: number;
+            score_max?: number;
+        } = {},
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
 
         return fetchClient(
             `${BASE_URL}/items/feed/${feedId}?${query.toString()}`,
@@ -104,12 +123,22 @@ export const api = {
     },
 
     getAllItems: (
-        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+        params: {
+            before?: string;
+            unread_only?: boolean;
+            limit?: number;
+            score_min?: number;
+            score_max?: number;
+        } = {},
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
 
         return fetchClient(`${BASE_URL}/items?${query.toString()}`);
     },
@@ -124,23 +153,43 @@ export const api = {
         }),
 
     getGlobalClusters: (
-        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+        params: {
+            before?: string;
+            unread_only?: boolean;
+            limit?: number;
+            score_min?: number;
+            score_max?: number;
+        } = {},
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
         return fetchClient(`${BASE_URL}/clusters?${query.toString()}`);
     },
 
     getFeedClusters: (
         feedId: string,
-        params: { before?: string; unread_only?: boolean; limit?: number } = {},
+        params: {
+            before?: string;
+            unread_only?: boolean;
+            limit?: number;
+            score_min?: number;
+            score_max?: number;
+        } = {},
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
         return fetchClient(
             `${BASE_URL}/clusters/feed/${feedId}?${query.toString()}`,
         );
@@ -161,8 +210,18 @@ export const api = {
             body: JSON.stringify({ since }),
         }),
 
-    getClusterUnreadCount: () =>
-        fetchClient(`${BASE_URL}/clusters/unread-count`),
+    getClusterUnreadCount: (
+        params: { score_min?: number; score_max?: number } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
+        return fetchClient(
+            `${BASE_URL}/clusters/unread-count?${query.toString()}`,
+        );
+    },
 
     checkAdmin: () => fetchClient(`${BASE_URL}/admin`),
     getAdminCodes: () => fetchClient(`${BASE_URL}/admin/codes`),

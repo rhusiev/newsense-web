@@ -44,30 +44,6 @@ export function ArticleList({
     const { filterPrediction, filterPredictionThreshold, useClusters } =
         useSettings();
 
-    const filterItems = useCallback(
-        (items: Item[]) => {
-            if (!filterPrediction) return items;
-            return items.filter(
-                (item) =>
-                    (item.prediction_score ?? 1) >= filterPredictionThreshold,
-            );
-        },
-        [filterPrediction, filterPredictionThreshold],
-    );
-
-    const filterClusters = useCallback(
-        (clusters: Cluster[]) => {
-            if (!filterPrediction) return clusters;
-            return clusters
-                .map((cluster) => ({
-                    ...cluster,
-                    items: filterItems(cluster.items),
-                }))
-                .filter((cluster) => cluster.items.length > 0);
-        },
-        [filterPrediction, filterItems],
-    );
-
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
 
     const unreadOnly =
@@ -100,16 +76,21 @@ export function ArticleList({
         setLoading(true);
         setHasMore(true);
         try {
-            const params = { limit: 20, unread_only: unreadOnly };
+            const params = {
+                limit: 20,
+                unread_only: unreadOnly,
+                score_min: filterPrediction
+                    ? filterPredictionThreshold
+                    : undefined,
+            };
 
             if (useClusters) {
                 const data =
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
                         : await api.getFeedClusters(feed.id, params);
-                const filtered = filterClusters(data);
-                const unique = filtered.filter(
-                    (c, index, self) =>
+                const unique = data.filter(
+                    (c: Cluster, index: number, self: Cluster[]) =>
                         index === self.findIndex((t) => t.id === c.id),
                 );
                 setClusters(unique);
@@ -120,9 +101,8 @@ export function ArticleList({
                     feed.id === "all"
                         ? await api.getAllItems(params)
                         : await api.getFeedItems(feed.id, params);
-                const filtered = filterItems(data);
-                const unique = filtered.filter(
-                    (i, index, self) =>
+                const unique = data.filter(
+                    (i: Item, index: number, self: Item[]) =>
                         index === self.findIndex((t) => t.id === i.id),
                 );
                 setItems(unique);
@@ -135,7 +115,14 @@ export function ArticleList({
         } finally {
             setLoading(false);
         }
-    }, [feed, unreadOnly, onError, useClusters, filterClusters, filterItems]);
+    }, [
+        feed,
+        unreadOnly,
+        onError,
+        useClusters,
+        filterPrediction,
+        filterPredictionThreshold,
+    ]);
 
     const loadMore = async () => {
         if (
@@ -160,6 +147,9 @@ export function ArticleList({
                 limit: 20,
                 before: cursor || undefined,
                 unread_only: unreadOnly,
+                score_min: filterPrediction
+                    ? filterPredictionThreshold
+                    : undefined,
             };
 
             if (useClusters) {
@@ -171,11 +161,10 @@ export function ArticleList({
                 if (data.length === 0) {
                     setHasMore(false);
                 } else {
-                    const filteredData = filterClusters(data);
                     setClusters((prev) => {
                         const existingIds = new Set(prev.map((c) => c.id));
-                        const unique = filteredData.filter(
-                            (c) => !existingIds.has(c.id),
+                        const unique = data.filter(
+                            (c: Cluster) => !existingIds.has(c.id),
                         );
                         return [...prev, ...unique];
                     });
@@ -190,11 +179,10 @@ export function ArticleList({
                 if (data.length === 0) {
                     setHasMore(false);
                 } else {
-                    const filteredData = filterItems(data);
                     setItems((prev) => {
                         const existingIds = new Set(prev.map((i) => i.id));
-                        const unique = filteredData.filter(
-                            (i) => !existingIds.has(i.id),
+                        const unique = data.filter(
+                            (i: Item) => !existingIds.has(i.id),
                         );
                         return [...prev, ...unique];
                     });
@@ -230,18 +218,23 @@ export function ArticleList({
         if (!feed || isSyncing) return;
         setIsSyncing(true);
         try {
-            const params = { limit: 20, unread_only: unreadOnly };
+            const params = {
+                limit: 20,
+                unread_only: unreadOnly,
+                score_min: filterPrediction
+                    ? filterPredictionThreshold
+                    : undefined,
+            };
 
             if (useClusters) {
                 const data: Cluster[] =
                     feed.id === "all"
                         ? await api.getGlobalClusters(params)
                         : await api.getFeedClusters(feed.id, params);
-                const newData = filterClusters(data);
 
                 setClusters((prev) => {
                     const existingIds = new Set(prev.map((c) => c.id));
-                    const unique = newData.filter(
+                    const unique = data.filter(
                         (c) => !existingIds.has(c.id),
                     );
                     if (unique.length > 0 && scrollRef.current) {
@@ -256,11 +249,10 @@ export function ArticleList({
                     feed.id === "all"
                         ? await api.getAllItems(params)
                         : await api.getFeedItems(feed.id, params);
-                const newData = filterItems(data);
 
                 setItems((prev) => {
                     const existingIds = new Set(prev.map((i) => i.id));
-                    const unique = newData.filter(
+                    const unique = data.filter(
                         (i) => !existingIds.has(i.id),
                     );
                     if (unique.length > 0 && scrollRef.current) {
