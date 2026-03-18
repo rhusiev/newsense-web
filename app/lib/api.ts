@@ -72,8 +72,12 @@ export const api = {
             method: "PUT",
             body: JSON.stringify(data),
         }),
-    getFeedSubscribers: (id: string) =>
-        fetchClient(`${BASE_URL}/feeds/${id}/subscribers/count`),
+    getPopularFeeds: (params: { limit?: number; offset?: number } = {}) => {
+        const query = new URLSearchParams();
+        if (params.limit) query.append("limit", params.limit.toString());
+        if (params.offset) query.append("offset", params.offset.toString());
+        return fetchClient(`${BASE_URL}/feeds/popular?${query.toString()}`);
+    },
 
     getUnreadCounts: (
         params: { score_min?: number; score_max?: number } = {},

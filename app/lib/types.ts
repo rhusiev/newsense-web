@@ -5,6 +5,7 @@ export interface Feed {
     title: string | null;
     description: string | null;
     is_public: boolean;
+    subscriber_count: number;
     created_at: string;
     unread_count?: number;
 }

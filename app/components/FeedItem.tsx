@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
-import { MoreHorizontal, Layers, Rss } from "lucide-react";
+import { MoreHorizontal, Layers, Rss, Users } from "lucide-react";
 import type { Feed } from "~/lib/types";
+import { formatNumber } from "~/lib/utils";
 import { FeedItemMenu } from "./FeedItemMenu";
 
 interface FeedItemProps {
@@ -120,20 +121,32 @@ export function FeedItem({
                     </p>
                 </div>
 
-                <div className="ml-2 flex-shrink-0 flex items-center justify-end h-6">
-                    <div
-                        className={`bg-brand-accent rounded-full px-2 py-0.5 md:px-1.5 text-white text-xs md:text-[10px] font-bold min-w-[20px] text-center shadow-sm ${isSelected ? "hidden" : "block md:group-hover:hidden"} ${!feed.unread_count ? "opacity-0" : ""}`}
-                    >
-                        {feed.unread_count || 0}
-                    </div>
+                <div className="ml-2 flex-shrink-0 flex items-center gap-1.5 justify-end h-6">
+                    {type === "public" &&
+                        feed.subscriber_count !== undefined && (
+                            <div className="flex items-center gap-1 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5">
+                                <Users className="w-2.5 h-2.5 text-gray-400" />
+                                <span className="text-[11px] font-medium text-gray-500 tabular-nums">
+                                    {formatNumber(feed.subscriber_count)}
+                                </span>
+                            </div>
+                        )}
 
-                    <button
-                        ref={buttonRef}
-                        onClick={handleMenuToggle}
-                        className={`hidden md:flex text-gray-600 hover:text-brand-900 p-0.5 rounded-md hover:bg-black/5 ${isSelected ? "md:flex" : "md:hidden group-hover:flex"} items-center justify-center transition-colors`}
-                    >
-                        <MoreHorizontal size={18} />
-                    </button>
+                    <div className="w-[30px] flex items-center justify-center">
+                        <div
+                            className={`bg-brand-accent rounded-full px-2 py-0.5 md:px-1.5 text-white text-xs md:text-[10px] font-bold min-w-[20px] text-center shadow-sm ${isSelected ? "hidden" : "block md:group-hover:hidden"} ${!feed.unread_count ? "opacity-0" : ""}`}
+                        >
+                            {feed.unread_count || 0}
+                        </div>
+
+                        <button
+                            ref={buttonRef}
+                            onClick={handleMenuToggle}
+                            className={`text-gray-600 hover:text-brand-900 p-0.5 rounded-md hover:bg-black/5 ${isSelected ? "flex" : "hidden group-hover:flex"} items-center justify-center transition-colors`}
+                        >
+                            <MoreHorizontal size={18} />
+                        </button>
+                    </div>
                 </div>
             </div>
 

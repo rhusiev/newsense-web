@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
-import { X, Globe, Link as LinkIcon, Lock, Calendar } from "lucide-react";
+import {
+    X,
+    Globe,
+    Link as LinkIcon,
+    Lock,
+    Calendar,
+    Users,
+} from "lucide-react";
 import { api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
+import { formatNumber } from "~/lib/utils";
 import { Button } from "~/components/ui/Button";
 import { Modal } from "~/components/ui/Modal";
 import { Input } from "~/components/ui/Input";
@@ -60,6 +68,16 @@ export function FeedInfoModal({ feed, onClose }: FeedInfoModalProps) {
                             {feed.is_public
                                 ? "Public Feed (Searchable)"
                                 : "Private Feed (Only you)"}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <Users size={16} className="text-gray-400" />
+                        <span>
+                            {formatNumber(feed.subscriber_count || 0)}{" "}
+                            {feed.subscriber_count === 1
+                                ? "subscriber"
+                                : "subscribers"}
                         </span>
                     </div>
 
@@ -210,11 +228,7 @@ export function FeedManageModal({
                     <Button type="button" variant="ghost" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        isLoading={loading}
-                    >
+                    <Button type="submit" variant="primary" isLoading={loading}>
                         {mode === "create" ? "Add Feed" : "Save Changes"}
                     </Button>
                 </div>
