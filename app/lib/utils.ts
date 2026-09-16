@@ -19,3 +19,13 @@ export function formatNumber(num: number): string {
     }
     return num.toString();
 }
+
+export function isWithinDays(
+    isoDate: string | null | undefined,
+    days: number,
+): boolean {
+    if (!isoDate) return false;
+    const parsed = new Date(isoDate).getTime();
+    if (Number.isNaN(parsed)) return false;
+    return Date.now() - parsed < days * 24 * 60 * 60 * 1000;
+}

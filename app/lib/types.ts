@@ -8,6 +8,7 @@ export interface Feed {
     subscriber_count: number;
     created_at: string;
     unread_count?: number;
+    read_count?: number;
 }
 
 export interface Item {

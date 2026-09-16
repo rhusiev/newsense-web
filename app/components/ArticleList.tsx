@@ -4,11 +4,17 @@ import {
     useRef,
     useCallback,
     useLayoutEffect,
+    useMemo,
 } from "react";
 import { Loader2 } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Item, Cluster } from "~/lib/types";
 import { useSettings } from "~/lib/settings-context";
+import {
+    NEW_FEED_FILTER_GRACE_DAYS,
+    NEW_FEED_FILTER_GRACE_READS,
+} from "~/lib/constants";
+import { isWithinDays } from "~/lib/utils";
 import { ArticleItem } from "./ArticleItem";
 import { ClusterItem } from "./ClusterItem";
 import { EmptyState } from "./ui/EmptyState";
@@ -43,6 +49,25 @@ export function ArticleList({
 }: ArticleListProps) {
     const { filterPrediction, filterPredictionThreshold, useClusters } =
         useSettings();
+
+    // A feed the model has barely seen scores its articles badly, so filtering
+    // would leave it looking empty. Stay exempt until the feed is both old
+    // enough and read enough for the scores to be worth anything.
+    const scoreMin = useMemo(() => {
+        if (!filterPrediction) return undefined;
+        // "all" is synthetic and carries no history of its own, so it never qualifies.
+        if (feed?.id === "all") return filterPredictionThreshold;
+        const stillNew =
+            isWithinDays(feed?.created_at, NEW_FEED_FILTER_GRACE_DAYS) ||
+            (feed?.read_count ?? 0) < NEW_FEED_FILTER_GRACE_READS;
+        return stillNew ? undefined : filterPredictionThreshold;
+    }, [
+        feed?.id,
+        feed?.created_at,
+        feed?.read_count,
+        filterPrediction,
+        filterPredictionThreshold,
+    ]);
 
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
 
@@ -79,9 +104,7 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
-                score_min: filterPrediction
-                    ? filterPredictionThreshold
-                    : undefined,
+                score_min: scoreMin,
             };
 
             if (useClusters) {
@@ -115,14 +138,7 @@ export function ArticleList({
         } finally {
             setLoading(false);
         }
-    }, [
-        feed,
-        unreadOnly,
-        onError,
-        useClusters,
-        filterPrediction,
-        filterPredictionThreshold,
-    ]);
+    }, [feed, unreadOnly, onError, useClusters, scoreMin]);
 
     const loadMore = async () => {
         if (
@@ -147,9 +163,7 @@ export function ArticleList({
                 limit: 20,
                 before: cursor || undefined,
                 unread_only: unreadOnly,
-                score_min: filterPrediction
-                    ? filterPredictionThreshold
-                    : undefined,
+                score_min: scoreMin,
             };
 
             if (useClusters) {
@@ -221,9 +235,7 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
-                score_min: filterPrediction
-                    ? filterPredictionThreshold
-                    : undefined,
+                score_min: scoreMin,
             };
 
             if (useClusters) {

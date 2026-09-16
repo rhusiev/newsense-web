@@ -136,19 +136,19 @@ function HomeContent() {
                 api.getUnreadCounts(params),
             ]);
 
-            const subsWithCounts = subs.map((feed: Feed) => ({
-                ...feed,
-                unread_count:
-                    counts.feeds.find((c: any) => c.feed_id === feed.id)
-                        ?.unread_count || 0,
-            }));
+            const withCounts = (feed: Feed) => {
+                const c = counts.feeds.find(
+                    (entry: any) => entry.feed_id === feed.id,
+                );
+                return {
+                    ...feed,
+                    unread_count: c?.unread_count || 0,
+                    read_count: c?.read_count || 0,
+                };
+            };
 
-            const ownedWithCounts = owns.map((feed: Feed) => ({
-                ...feed,
-                unread_count:
-                    counts.feeds.find((c: any) => c.feed_id === feed.id)
-                        ?.unread_count || 0,
-            }));
+            const subsWithCounts = subs.map(withCounts);
+            const ownedWithCounts = owns.map(withCounts);
 
             setSubscribed(subsWithCounts);
             setOwned(ownedWithCounts);
