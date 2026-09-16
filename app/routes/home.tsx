@@ -247,13 +247,14 @@ function HomeContent() {
     };
 
     const getFilteredSubscribed = () => {
-        const all = {
+        const all: Feed = {
             id: "all",
             owner_id: null,
             url: "",
             title: "All Articles",
             description: "Aggregated items",
             is_public: false,
+            subscriber_count: 0,
             created_at: new Date().toISOString(),
             unread_count: totalUnread,
         };

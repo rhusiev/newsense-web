@@ -35,6 +35,7 @@ export function ReaderView({
                 title: "All Articles",
                 description: "Aggregated items from all subscriptions",
                 is_public: false,
+                subscriber_count: 0,
                 created_at: new Date().toISOString(),
                 unread_count: totalUnread,
             },
