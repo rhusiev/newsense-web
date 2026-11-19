@@ -3,8 +3,8 @@ export const DEFAULT_FILTER_PREDICTION_THRESHOLD = -0.7;
 export const DEFAULT_USE_CLUSTERS = true;
 // "score" hides articles below the threshold; "top" keeps the day's N best.
 export const DEFAULT_FILTER_MODE: FilterMode = "score";
-// Replay of 2026 labels: the day's top 20 clusters held ~75-83% of the liked ones.
-export const DEFAULT_TOP_PER_DAY = 20;
+// Chosen by the user. Replay of 2026 labels: the day's top 40 clusters held 94-97% of the liked ones (Apr-Sep).
+export const DEFAULT_TOP_PER_DAY = 40;
 export const MAX_TOP_PER_DAY = 200;
 
 export type FilterMode = "score" | "top";
