@@ -16,6 +16,7 @@ import { Input } from "~/components/ui/Input";
 import { Textarea } from "~/components/ui/Textarea";
 import { useSettings } from "~/lib/settings-context";
 import { MAX_TOP_PER_DAY } from "~/lib/constants";
+import { Segmented } from "~/components/ui/Segmented";
 
 interface FeedInfoModalProps {
     feed: Feed | null;
@@ -303,22 +304,14 @@ export function FeedTopNModal({
                 <p className="text-sm text-gray-600">
                     {feed.title || "Untitled Feed"}
                 </p>
-                <label className="flex items-center gap-2 text-sm text-gray-800">
-                    <input
-                        type="radio"
-                        checked={!useOwn}
-                        onChange={() => setUseOwn(false)}
-                    />
-                    Same as Settings ({topPerDay})
-                </label>
-                <label className="flex items-center gap-2 text-sm text-gray-800">
-                    <input
-                        type="radio"
-                        checked={useOwn}
-                        onChange={() => setUseOwn(true)}
-                    />
-                    Own number
-                </label>
+                <Segmented
+                    options={[
+                        { mode: "settings", label: `Same as Settings (${topPerDay})` },
+                        { mode: "own", label: "Own number" },
+                    ]}
+                    value={useOwn ? "own" : "settings"}
+                    onChange={(m) => setUseOwn(m === "own")}
+                />
                 {useOwn && (
                     <Input
                         label="Stories per day"
