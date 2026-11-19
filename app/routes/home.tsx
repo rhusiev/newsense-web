@@ -1,9 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import { data } from "react-router";
 import { AuthProvider, useAuth } from "~/lib/auth-context";
 import { SettingsProvider, useSettings } from "~/lib/settings-context";
 import { BASE_URL, api } from "~/lib/api";
 import type { Feed } from "~/lib/types";
+import { FullTextFeedsContext } from "~/lib/full-text";
 import type { Route } from "./+types/home";
 import { MobileLayout } from "~/components/Home/MobileLayout";
 import { DesktopLayout } from "~/components/Home/DesktopLayout";
@@ -174,6 +175,17 @@ function HomeContent() {
         }
     }, [selectedFeed, isDesktopNarrow]);
 
+    // Feeds whose items open in the reader instead of the original site.
+    const fullTextFeeds = useMemo(
+        () => new Set(allFeeds.filter((f) => f.full_text).map((f) => f.id)),
+        [allFeeds],
+    );
+    const withFullText = (layout: ReactNode) => (
+        <FullTextFeedsContext.Provider value={fullTextFeeds}>
+            {layout}
+        </FullTextFeedsContext.Provider>
+    );
+
     const feedMap = useMemo(() => {
         const map = new Map<string, string>();
         allFeeds.forEach((f) => map.set(f.id, f.title || "Untitled Feed"));
@@ -311,7 +323,7 @@ function HomeContent() {
     if (layoutMode === "loading") return null;
 
     if (layoutMode === "mobile") {
-        return (
+        return withFullText(
             <MobileLayout
                 user={user}
                 mobileTab={mobileTab}
@@ -341,7 +353,7 @@ function HomeContent() {
         );
     }
 
-    return (
+    return withFullText(
         <DesktopLayout
             user={user}
             isDesktopNarrow={isDesktopNarrow}

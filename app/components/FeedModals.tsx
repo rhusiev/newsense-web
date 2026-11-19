@@ -124,6 +124,7 @@ export function FeedManageModal({
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [isPublic, setIsPublic] = useState(true);
+    const [fullText, setFullText] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -132,11 +133,13 @@ export function FeedManageModal({
                 setTitle(feed.title || "");
                 setDescription(feed.description || "");
                 setIsPublic(feed.is_public);
+                setFullText(feed.full_text ?? false);
                 setUrl(feed.url);
             } else {
                 setTitle("");
                 setDescription("");
                 setIsPublic(true);
+                setFullText(false);
                 setUrl("");
             }
         }
@@ -160,6 +163,7 @@ export function FeedManageModal({
                     title,
                     description,
                     is_public: isPublic,
+                    full_text: !isPublic && fullText,
                 });
             }
             onSuccess();
@@ -225,6 +229,30 @@ export function FeedManageModal({
                         Make this feed public (visible in Discover)
                     </label>
                 </div>
+
+                {mode === "edit" && (
+                    <div className="flex items-start gap-3 p-1">
+                        <input
+                            type="checkbox"
+                            id="fullText"
+                            checked={!isPublic && fullText}
+                            disabled={isPublic}
+                            onChange={(e) => setFullText(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 text-[#587e5b] rounded border-gray-300 focus:ring-[#587e5b] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <label
+                            htmlFor="fullText"
+                            className={`text-sm select-none ${isPublic ? "text-gray-400" : "text-gray-700 cursor-pointer"}`}
+                        >
+                            Fetch full articles to read here
+                            <span className="block text-xs text-gray-500">
+                                {isPublic
+                                    ? "Only for private feeds."
+                                    : "New articles from the last 48 hours. Images load when you tap them."}
+                            </span>
+                        </label>
+                    </div>
+                )}
 
                 <div className="pt-4 flex justify-end gap-3">
                     <Button type="button" variant="ghost" onClick={onClose}>

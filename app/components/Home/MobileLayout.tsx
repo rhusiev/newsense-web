@@ -85,7 +85,7 @@ export function MobileLayout({
                 onLoginClick={() => setAuthModal({ open: true, view: "login" })}
             />
 
-            <main className="flex-1 overflow-hidden relative flex flex-col">
+            <main id="list-pane" className="flex-1 overflow-hidden relative flex flex-col">
                 {selectedFeed ? (
                     <ArticleList
                         feed={selectedFeed}

@@ -14,6 +14,9 @@ import {
 import type { Cluster } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
+import { ArticleReader } from "./reader/ArticleReader";
+import { useHasFullText } from "~/lib/full-text";
+import { useSettings } from "~/lib/settings-context";
 
 interface ClusterItemProps {
     cluster: Cluster;
@@ -29,6 +32,8 @@ export function ClusterItem({
     onUpdateItemStatus,
 }: ClusterItemProps) {
     const [activeIndex, setActiveIndex] = useState(0);
+    const [reading, setReading] = useState(false);
+    const { readerLayout } = useSettings();
     const [showLeftFade, setShowLeftFade] = useState(false);
 
     const tabsContainerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +42,7 @@ export function ClusterItem({
     if (!cluster.items || cluster.items.length === 0) return null;
 
     const activeItem = cluster.items[activeIndex];
+    const hasFullText = useHasFullText(activeItem);
 
     const isSingle = cluster.items.length === 1;
     const clusterLiked = cluster.items.every((i) => i.liked === 1);
@@ -206,6 +212,11 @@ export function ClusterItem({
                     href={activeItem.link}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={(e) => {
+                        if (!hasFullText) return;
+                        e.preventDefault();
+                        setReading(true);
+                    }}
                     className={`block text-lg font-bold text-slate-900 mb-2 leading-snug hover:text-indigo-600 transition-colors ${activeItem.is_read ? "opacity-50" : ""}`}
                 >
                     {activeItem.title}
@@ -216,6 +227,20 @@ export function ClusterItem({
                 >
                     {stripHtml(activeItem.content).substring(0, 300)}...
                 </p>
+                {reading && (
+                    <ArticleReader
+                        item={activeItem}
+                        feedName={getFeedName(activeItem)}
+                        layout={readerLayout}
+                        onClose={() => setReading(false)}
+                        onRate={(v) =>
+                            onUpdateItemStatus(activeItem.id, {
+                                liked: activeItem.liked === v ? null : v,
+                                is_read: true,
+                            })
+                        }
+                    />
+                )}
             </div>
 
             <div className="flex items-center justify-start pt-1">

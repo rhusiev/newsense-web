@@ -2,6 +2,10 @@ import { Check, Circle, Minus, ThumbsUp, ThumbsDown } from "lucide-react";
 import type { Item } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
+import { useState } from "react";
+import { ArticleReader } from "./reader/ArticleReader";
+import { useHasFullText } from "~/lib/full-text";
+import { useSettings } from "~/lib/settings-context";
 
 interface ArticleItemProps {
     item: Item;
@@ -16,6 +20,9 @@ export function ArticleItem({
     onUpdateStatus,
     onLikeToggle,
 }: ArticleItemProps) {
+    const [reading, setReading] = useState(false);
+    const { readerLayout } = useSettings();
+    const hasFullText = useHasFullText(item);
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return "";
         return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -50,6 +57,11 @@ export function ArticleItem({
                         href={item.link}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(e) => {
+                            if (!hasFullText) return;
+                            e.preventDefault();
+                            setReading(true);
+                        }}
                         className="w-fit block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-brand-accent decoration-2 underline-offset-2"
                     >
                         {item.title}
@@ -58,6 +70,15 @@ export function ArticleItem({
                     <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed mb-3">
                         {stripHtml(item.content).substring(0, 200)}...
                     </p>
+                    {reading && (
+                        <ArticleReader
+                            item={item}
+                            feedName={feedName}
+                            layout={readerLayout}
+                            onClose={() => setReading(false)}
+                            onRate={(v) => onLikeToggle(item, v)}
+                        />
+                    )}
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-baseline gap-2">

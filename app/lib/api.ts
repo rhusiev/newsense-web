@@ -147,6 +147,9 @@ export const api = {
         return fetchClient(`${BASE_URL}/items?${query.toString()}`);
     },
 
+    getFullText: (itemId: string) =>
+        fetchClient(`${BASE_URL}/items/${itemId}/full-text`),
+
     updateItemStatus: (
         itemId: string,
         status: { is_read?: boolean; liked?: number | null },

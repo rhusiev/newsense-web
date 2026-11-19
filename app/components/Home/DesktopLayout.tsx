@@ -150,7 +150,7 @@ export function DesktopLayout({
                 </aside>
             </>
 
-            <main className="flex-1 h-full min-w-0 relative flex flex-col">
+            <main id="list-pane" className="flex-1 h-full min-w-0 relative flex flex-col">
                 <ArticleList
                     feed={selectedFeed}
                     refreshKey={refreshKey}

@@ -9,6 +9,7 @@ export interface Feed {
     created_at: string;
     unread_count?: number;
     read_count?: number;
+    full_text?: boolean;
 }
 
 export interface Item {
