@@ -165,6 +165,7 @@ export const api = {
             score_max?: number;
             top_n?: number;
             tz?: string;
+            per_feed?: boolean;
         } = {},
     ) => {
         const query = new URLSearchParams();
@@ -178,6 +179,7 @@ export const api = {
         if (params.top_n !== undefined)
             query.append("top_n", params.top_n.toString());
         if (params.tz) query.append("tz", params.tz);
+        if (params.per_feed) query.append("per_feed", "true");
         return fetchClient(`${BASE_URL}/clusters?${query.toString()}`);
     },
 
@@ -189,6 +191,8 @@ export const api = {
             limit?: number;
             score_min?: number;
             score_max?: number;
+            top_n?: number;
+            tz?: string;
         } = {},
     ) => {
         const query = new URLSearchParams();
@@ -199,6 +203,9 @@ export const api = {
             query.append("score_min", params.score_min.toString());
         if (params.score_max !== undefined)
             query.append("score_max", params.score_max.toString());
+        if (params.top_n !== undefined)
+            query.append("top_n", params.top_n.toString());
+        if (params.tz) query.append("tz", params.tz);
         return fetchClient(
             `${BASE_URL}/clusters/feed/${feedId}?${query.toString()}`,
         );
@@ -231,6 +238,18 @@ export const api = {
             `${BASE_URL}/clusters/unread-count?${query.toString()}`,
         );
     },
+
+    getSettings: () => fetchClient(`${BASE_URL}/settings`),
+    updateSettings: (data: Record<string, unknown>) =>
+        fetchClient(`${BASE_URL}/settings`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+        }),
+    setFeedTopN: (feedId: string, topN: number | null) =>
+        fetchClient(`${BASE_URL}/feeds/${feedId}/top-n`, {
+            method: "PUT",
+            body: JSON.stringify({ top_n: topN }),
+        }),
 
     checkAdmin: () => fetchClient(`${BASE_URL}/admin`),
     getAdminCodes: () => fetchClient(`${BASE_URL}/admin/codes`),

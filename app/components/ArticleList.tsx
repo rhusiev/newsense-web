@@ -53,6 +53,8 @@ export function ArticleList({
         useClusters,
         filterMode,
         topPerDay,
+        feedTopN,
+        allArticlesTop,
     } = useSettings();
 
     // A feed the model has barely seen scores its articles badly, so filtering
@@ -74,17 +76,19 @@ export function ArticleList({
         filterPredictionThreshold,
     ]);
 
-    // Top-N exists only for the clustered "all" list; other lists keep the threshold.
+    // Top-N ranks clusters only; the item list keeps the threshold.
     const filterParams = useMemo(() => {
-        const ranksByDay =
-            filterPrediction &&
-            filterMode === "top" &&
-            useClusters &&
-            feed?.id === "all";
+        const ranksByDay = filterPrediction && filterMode === "top" && useClusters;
         if (!ranksByDay) return { score_min: scoreMin };
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (feed?.id !== "all") {
+            return { top_n: feedTopN[feed?.id] ?? topPerDay, tz };
+        }
+        if (allArticlesTop === "off") return {};
         return {
             top_n: topPerDay,
-            tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            tz,
+            per_feed: allArticlesTop === "per_feed",
         };
     }, [
         filterPrediction,
@@ -92,6 +96,8 @@ export function ArticleList({
         useClusters,
         feed?.id,
         topPerDay,
+        feedTopN,
+        allArticlesTop,
         scoreMin,
     ]);
 

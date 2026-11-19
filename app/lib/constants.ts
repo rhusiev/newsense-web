@@ -9,6 +9,14 @@ export const MAX_TOP_PER_DAY = 200;
 
 export type FilterMode = "score" | "top";
 
+// How All Articles applies top-N: each feed's N then merge, one N after merging, or none.
+export type AllArticlesTop = "per_feed" | "merged" | "off";
+export const DEFAULT_ALL_ARTICLES_TOP: AllArticlesTop = "merged";
+
+// "sheet" opens the reader over the list; "page" replaces the list.
+export type ReaderLayout = "sheet" | "page";
+export const DEFAULT_READER_LAYOUT: ReaderLayout = "sheet";
+
 // A feed stays exempt from the prediction filter until both of these are true:
 // enough time has passed and enough of its articles have been read. Until then
 // there is too little interaction history for the scores to mean anything, and

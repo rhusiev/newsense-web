@@ -14,6 +14,8 @@ import { Button } from "~/components/ui/Button";
 import { Modal } from "~/components/ui/Modal";
 import { Input } from "~/components/ui/Input";
 import { Textarea } from "~/components/ui/Textarea";
+import { useSettings } from "~/lib/settings-context";
+import { MAX_TOP_PER_DAY } from "~/lib/constants";
 
 interface FeedInfoModalProps {
     feed: Feed | null;
@@ -233,6 +235,91 @@ export function FeedManageModal({
                     </Button>
                 </div>
             </form>
+        </Modal>
+    );
+}
+
+// Sets how many stories a day this feed shows in top-per-day mode.
+export function FeedTopNModal({
+    feed,
+    onClose,
+}: {
+    feed: Feed | null;
+    onClose: () => void;
+}) {
+    const { feedTopN, topPerDay, setFeedTopN } = useSettings();
+    const own = feed ? feedTopN[feed.id] : undefined;
+    const [useOwn, setUseOwn] = useState(own !== undefined);
+    const [value, setValue] = useState(String(own ?? topPerDay));
+
+    useEffect(() => {
+        if (!feed) return;
+        setUseOwn(own !== undefined);
+        setValue(String(own ?? topPerDay));
+    }, [feed?.id]);
+
+    if (!feed) return null;
+    const n = parseInt(value, 10);
+    const valid = n >= 1 && n <= MAX_TOP_PER_DAY;
+
+    const save = () => {
+        if (!useOwn) setFeedTopN(feed.id, null);
+        else if (valid) setFeedTopN(feed.id, n);
+        else return;
+        onClose();
+    };
+
+    return (
+        <Modal isOpen onClose={onClose} title="Stories per day" maxWidth="max-w-sm">
+            <div className="p-6 space-y-4">
+                <p className="text-sm text-gray-600">
+                    {feed.title || "Untitled Feed"}
+                </p>
+                <label className="flex items-center gap-2 text-sm text-gray-800">
+                    <input
+                        type="radio"
+                        checked={!useOwn}
+                        onChange={() => setUseOwn(false)}
+                    />
+                    Same as Settings ({topPerDay})
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-800">
+                    <input
+                        type="radio"
+                        checked={useOwn}
+                        onChange={() => setUseOwn(true)}
+                    />
+                    Own number
+                </label>
+                {useOwn && (
+                    <Input
+                        label="Stories per day"
+                        type="number"
+                        step="1"
+                        min="1"
+                        max={MAX_TOP_PER_DAY}
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        error={valid ? undefined : `Use 1 to ${MAX_TOP_PER_DAY}`}
+                    />
+                )}
+                <p className="text-xs text-gray-500">
+                    Applies when Settings use "Top per day".
+                </p>
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        onClick={save}
+                        disabled={useOwn && !valid}
+                    >
+                        Save
+                    </Button>
+                </div>
+            </div>
         </Modal>
     );
 }

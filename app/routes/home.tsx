@@ -103,6 +103,7 @@ function HomeContent() {
         feed?: Feed | null;
     }>({ open: false, mode: "create" });
     const [infoModalFeed, setInfoModalFeed] = useState<Feed | null>(null);
+    const [topNModalFeed, setTopNModalFeed] = useState<Feed | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState<{
         isOpen: boolean;
@@ -236,6 +237,9 @@ function HomeContent() {
             case "info":
                 setInfoModalFeed(feed);
                 break;
+            case "top_n":
+                setTopNModalFeed(feed);
+                break;
             case "edit":
                 setManageModal({ open: true, mode: "edit", feed });
                 break;
@@ -288,6 +292,8 @@ function HomeContent() {
         setManageModal,
         infoModalFeed,
         setInfoModalFeed,
+        topNModalFeed,
+        setTopNModalFeed,
         settingsOpen,
         setSettingsOpen,
         confirmConfig,

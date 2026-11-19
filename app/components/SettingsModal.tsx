@@ -17,12 +17,54 @@ import {
     Check,
 } from "lucide-react";
 import { createPortal } from "react-dom";
-import { MAX_TOP_PER_DAY, type FilterMode } from "~/lib/constants";
+import {
+    MAX_TOP_PER_DAY,
+    type AllArticlesTop,
+    type FilterMode,
+    type ReaderLayout,
+} from "~/lib/constants";
 
 const FILTER_MODES: { mode: FilterMode; label: string }[] = [
     { mode: "top", label: "Top per day" },
     { mode: "score", label: "Score threshold" },
 ];
+
+const ALL_ARTICLES_MODES: { mode: AllArticlesTop; label: string }[] = [
+    { mode: "per_feed", label: "Each feed's top" },
+    { mode: "merged", label: "One top for all" },
+    { mode: "off", label: "Off" },
+];
+
+const READER_LAYOUTS: { mode: ReaderLayout; label: string }[] = [
+    { mode: "sheet", label: "Over the list" },
+    { mode: "page", label: "Instead of the list" },
+];
+
+function Segmented<T extends string>({
+    options,
+    value,
+    onChange,
+}: {
+    options: { mode: T; label: string }[];
+    value: T;
+    onChange: (mode: T) => void;
+}) {
+    return (
+        <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
+            {options.map(({ mode, label }) => (
+                <button
+                    key={mode}
+                    className={`flex-1 py-1.5 rounded-lg transition-all font-medium text-xs
+                        ${value === mode ? "bg-white text-brand-900 shadow-sm border border-gray-200" : "text-gray-400 hover:text-gray-600"}
+                    `}
+                    onClick={() => onChange(mode)}
+                >
+                    {label}
+                </button>
+            ))}
+        </div>
+    );
+}
 
 export function SettingsModal({
     isOpen,
@@ -44,6 +86,10 @@ export function SettingsModal({
         setFilterMode,
         topPerDay,
         setTopPerDay,
+        allArticlesTop,
+        setAllArticlesTop,
+        readerLayout,
+        setReaderLayout,
     } = useSettings();
 
     const [isAdmin, setIsAdmin] = useState(false);
@@ -145,20 +191,13 @@ export function SettingsModal({
 
                             {filterPrediction && (
                                 <div className="pl-4 border-l-2 border-brand-100 space-y-3">
-                                    <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
-                                        {FILTER_MODES.map(({ mode, label }) => (
-                                            <button
-                                                key={mode}
-                                                className={`flex-1 py-1.5 rounded-lg transition-all font-medium text-xs
-                                                    ${filterMode === mode ? "bg-white text-brand-900 shadow-sm border border-gray-200" : "text-gray-400 hover:text-gray-600"}
-                                                `}
-                                                onClick={() => setFilterMode(mode)}
-                                            >
-                                                {label}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <Segmented
+                                        options={FILTER_MODES}
+                                        value={filterMode}
+                                        onChange={setFilterMode}
+                                    />
                                     {filterMode === "top" ? (
+                                        <>
                                         <Input
                                             label="Articles per day"
                                             type="number"
@@ -177,8 +216,26 @@ export function SettingsModal({
                                                 )
                                                     setTopPerDay(val);
                                             }}
-                                            helpText="All Articles shows the day's best-scored stories. A few come from lower down, so the model learns what it would hide."
+                                            helpText="Each list shows the day's best-scored stories. A few come from lower down, so the model learns what it would hide. A feed can set its own number from its menu."
                                         />
+                                        <div className="space-y-1">
+                                            <h4 className="text-xs font-medium text-brand-950">
+                                                All Articles
+                                            </h4>
+                                            <Segmented
+                                                options={ALL_ARTICLES_MODES}
+                                                value={allArticlesTop}
+                                                onChange={setAllArticlesTop}
+                                            />
+                                            <p className="text-xs text-gray-500">
+                                                {allArticlesTop === "per_feed"
+                                                    ? "Takes each feed's top stories, then shows them together."
+                                                    : allArticlesTop === "merged"
+                                                      ? "Shows the best stories of all feeds together, by the number above."
+                                                      : "Shows every story, without a daily limit."}
+                                            </p>
+                                        </div>
+                                        </>
                                     ) : (
                                         <Input
                                             label="Filtering Threshold"
@@ -240,6 +297,23 @@ export function SettingsModal({
                                     />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                                 </label>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div>
+                                    <h3 className="text-sm font-medium text-brand-950">
+                                        Reader
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                        Where full articles open, for feeds with
+                                        full text on.
+                                    </p>
+                                </div>
+                                <Segmented
+                                    options={READER_LAYOUTS}
+                                    value={readerLayout}
+                                    onChange={setReaderLayout}
+                                />
                             </div>
                         </div>
                     </div>
