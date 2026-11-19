@@ -98,7 +98,7 @@ export function ClusterItem({
     const handleClusterLike = (val: number) => {
         const newVal =
             (val === 1 && clusterLiked) || (val === -1 && clusterDisliked)
-                ? 0
+                ? null
                 : val;
         onUpdateClusterStatus(cluster.id, { liked: newVal, is_read: true });
     };
@@ -309,7 +309,7 @@ function ItemMenuDropdown({
                             colorClass="text-emerald-600 hover:bg-emerald-50"
                             onClick={() =>
                                 handleItemAction({
-                                    liked: activeItem.liked === 1 ? 0 : 1,
+                                    liked: activeItem.liked === 1 ? null : 1,
                                     is_read: true,
                                 })
                             }
@@ -325,7 +325,7 @@ function ItemMenuDropdown({
                             colorClass="text-rose-600 hover:bg-rose-50"
                             onClick={() =>
                                 handleItemAction({
-                                    liked: activeItem.liked === -1 ? 0 : -1,
+                                    liked: activeItem.liked === -1 ? null : -1,
                                     is_read: true,
                                 })
                             }

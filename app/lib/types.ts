@@ -20,7 +20,7 @@ export interface Item {
     author: string | null;
     published_at: string;
     is_read: boolean;
-    liked: number; // 0, 1, or -1
+    liked: number | null; // 1, 0 or -1; null until rated
     cluster_id: string | null;
     prediction_score?: number;
 }
@@ -31,7 +31,7 @@ export interface Cluster {
     sort_date: string;
     items: Item[];
     is_read?: boolean;
-    liked?: number;
+    liked?: number | null;
 }
 
 export interface User {

@@ -149,7 +149,7 @@ export const api = {
 
     updateItemStatus: (
         itemId: string,
-        status: { is_read?: boolean; liked?: number },
+        status: { is_read?: boolean; liked?: number | null },
     ) =>
         fetchClient(`${BASE_URL}/items/${itemId}/status`, {
             method: "PUT",
@@ -201,7 +201,7 @@ export const api = {
 
     updateClusterStatus: (
         clusterId: string,
-        status: { is_read?: boolean; liked?: number },
+        status: { is_read?: boolean; liked?: number | null },
     ) =>
         fetchClient(`${BASE_URL}/clusters/${clusterId}/status`, {
             method: "PUT",

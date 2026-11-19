@@ -284,7 +284,7 @@ export function ArticleList({
 
     const handleUpdateItemStatus = async (
         itemId: string,
-        updates: { is_read?: boolean; liked?: number },
+        updates: { is_read?: boolean; liked?: number | null },
     ) => {
         try {
             await api.updateItemStatus(itemId, updates);
@@ -319,7 +319,7 @@ export function ArticleList({
 
     const handleUpdateClusterStatus = async (
         clusterId: string,
-        updates: { is_read?: boolean; liked?: number },
+        updates: { is_read?: boolean; liked?: number | null },
     ) => {
         try {
             await api.updateClusterStatus(clusterId, updates);
@@ -343,7 +343,7 @@ export function ArticleList({
     };
 
     const handleLikeToggleItem = async (item: Item, value: number) => {
-        const newValue = item.liked === value ? 0 : value;
+        const newValue = item.liked === value ? null : value;
         await handleUpdateItemStatus(item.id, {
             liked: newValue,
             is_read: true,
