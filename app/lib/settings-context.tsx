@@ -3,18 +3,25 @@ import {
   DEFAULT_FILTER_PREDICTION,
   DEFAULT_FILTER_PREDICTION_THRESHOLD,
   DEFAULT_USE_CLUSTERS,
+  DEFAULT_FILTER_MODE,
+  DEFAULT_TOP_PER_DAY,
+  type FilterMode,
 } from "./constants";
 
 interface Settings {
   filterPrediction: boolean;
   filterPredictionThreshold: number;
   useClusters: boolean;
+  filterMode: FilterMode;
+  topPerDay: number;
 }
 
 interface SettingsContextType extends Settings {
   setFilterPrediction: (value: boolean) => void;
   setFilterPredictionThreshold: (value: number) => void;
   setUseClusters: (value: boolean) => void;
+  setFilterMode: (value: FilterMode) => void;
+  setTopPerDay: (value: number) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -31,6 +38,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             filterPrediction: DEFAULT_FILTER_PREDICTION,
             filterPredictionThreshold: DEFAULT_FILTER_PREDICTION_THRESHOLD,
             useClusters: DEFAULT_USE_CLUSTERS,
+            filterMode: DEFAULT_FILTER_MODE,
+            topPerDay: DEFAULT_TOP_PER_DAY,
             ...JSON.parse(stored),
           };
         } catch (e) {
@@ -42,6 +51,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       filterPrediction: DEFAULT_FILTER_PREDICTION,
       filterPredictionThreshold: DEFAULT_FILTER_PREDICTION_THRESHOLD,
       useClusters: DEFAULT_USE_CLUSTERS,
+      filterMode: DEFAULT_FILTER_MODE,
+      topPerDay: DEFAULT_TOP_PER_DAY,
     };
   });
 
@@ -55,6 +66,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((s) => ({ ...s, filterPredictionThreshold }));
   const setUseClusters = (useClusters: boolean) =>
     setSettings((s) => ({ ...s, useClusters }));
+  const setFilterMode = (filterMode: FilterMode) =>
+    setSettings((s) => ({ ...s, filterMode }));
+  const setTopPerDay = (topPerDay: number) =>
+    setSettings((s) => ({ ...s, topPerDay }));
 
   return (
     <SettingsContext.Provider
@@ -63,6 +78,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setFilterPrediction,
         setFilterPredictionThreshold,
         setUseClusters,
+        setFilterMode,
+        setTopPerDay,
       }}
     >
       {children}

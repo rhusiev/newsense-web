@@ -9,6 +9,7 @@ import {
     MoreHorizontal,
     ExternalLink,
     Calendar,
+    Compass,
 } from "lucide-react";
 import type { Cluster } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
@@ -190,6 +191,11 @@ export function ClusterItem({
                 </div>
 
                 <div className="shrink-0 flex items-center gap-1.5 text-[11px] font-medium text-slate-400 px-2 py-1 rounded">
+                    {cluster.explored && (
+                        <span title="Picked from below your top stories, so rating it teaches the model what it would hide">
+                            <Compass size={12} className="text-slate-500" />
+                        </span>
+                    )}
                     <Calendar size={12} />
                     {formatDate(activeItem.published_at)}
                 </div>

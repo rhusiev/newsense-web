@@ -163,6 +163,8 @@ export const api = {
             limit?: number;
             score_min?: number;
             score_max?: number;
+            top_n?: number;
+            tz?: string;
         } = {},
     ) => {
         const query = new URLSearchParams();
@@ -173,6 +175,9 @@ export const api = {
             query.append("score_min", params.score_min.toString());
         if (params.score_max !== undefined)
             query.append("score_max", params.score_max.toString());
+        if (params.top_n !== undefined)
+            query.append("top_n", params.top_n.toString());
+        if (params.tz) query.append("tz", params.tz);
         return fetchClient(`${BASE_URL}/clusters?${query.toString()}`);
     },
 

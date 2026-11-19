@@ -17,6 +17,12 @@ import {
     Check,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { MAX_TOP_PER_DAY, type FilterMode } from "~/lib/constants";
+
+const FILTER_MODES: { mode: FilterMode; label: string }[] = [
+    { mode: "top", label: "Top per day" },
+    { mode: "score", label: "Score threshold" },
+];
 
 export function SettingsModal({
     isOpen,
@@ -34,6 +40,10 @@ export function SettingsModal({
         setFilterPredictionThreshold,
         useClusters,
         setUseClusters,
+        filterMode,
+        setFilterMode,
+        topPerDay,
+        setTopPerDay,
     } = useSettings();
 
     const [isAdmin, setIsAdmin] = useState(false);
@@ -134,42 +144,78 @@ export function SettingsModal({
                             </div>
 
                             {filterPrediction && (
-                                <div className="pl-4 border-l-2 border-brand-100">
-                                    <Input
-                                        label="Filtering Threshold"
-                                        type="number"
-                                        step="0.1"
-                                        min="-1"
-                                        max="1"
-                                        value={localThreshold}
-                                        onChange={(e) => {
-                                            let valStr = e.target.value;
-                                            let val = parseFloat(valStr);
-                                            if (!isNaN(val)) {
-                                                if (val > 1) {
-                                                    val = 1;
-                                                    valStr = "1";
-                                                } else if (val < -1) {
-                                                    val = -1;
-                                                    valStr = "-1";
-                                                }
-                                                setFilterPredictionThreshold(
-                                                    val,
+                                <div className="pl-4 border-l-2 border-brand-100 space-y-3">
+                                    <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
+                                        {FILTER_MODES.map(({ mode, label }) => (
+                                            <button
+                                                key={mode}
+                                                className={`flex-1 py-1.5 rounded-lg transition-all font-medium text-xs
+                                                    ${filterMode === mode ? "bg-white text-brand-900 shadow-sm border border-gray-200" : "text-gray-400 hover:text-gray-600"}
+                                                `}
+                                                onClick={() => setFilterMode(mode)}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {filterMode === "top" ? (
+                                        <Input
+                                            label="Articles per day"
+                                            type="number"
+                                            step="1"
+                                            min="1"
+                                            max={MAX_TOP_PER_DAY}
+                                            value={topPerDay}
+                                            onChange={(e) => {
+                                                const val = parseInt(
+                                                    e.target.value,
+                                                    10,
                                                 );
-                                            }
-                                            setLocalThreshold(valStr);
-                                        }}
-                                        onBlur={handleCommit}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                                handleCommit();
-                                                (
-                                                    e.target as HTMLInputElement
-                                                ).blur();
-                                            }
-                                        }}
-                                        helpText="Range: -1 to 1 (-1: definitely dislike, 1: definitely like). Values outside this range will be clamped."
-                                    />
+                                                if (
+                                                    val >= 1 &&
+                                                    val <= MAX_TOP_PER_DAY
+                                                )
+                                                    setTopPerDay(val);
+                                            }}
+                                            helpText="All Articles shows the day's best-scored stories. A few come from lower down, so the model learns what it would hide."
+                                        />
+                                    ) : (
+                                        <Input
+                                            label="Filtering Threshold"
+                                            type="number"
+                                            step="0.1"
+                                            min="-1"
+                                            max="1"
+                                            value={localThreshold}
+                                            onChange={(e) => {
+                                                let valStr = e.target.value;
+                                                let val = parseFloat(valStr);
+                                                if (!isNaN(val)) {
+                                                    if (val > 1) {
+                                                        val = 1;
+                                                        valStr = "1";
+                                                    } else if (val < -1) {
+                                                        val = -1;
+                                                        valStr = "-1";
+                                                    }
+                                                    setFilterPredictionThreshold(
+                                                        val,
+                                                    );
+                                                }
+                                                setLocalThreshold(valStr);
+                                            }}
+                                            onBlur={handleCommit}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    handleCommit();
+                                                    (
+                                                        e.target as HTMLInputElement
+                                                    ).blur();
+                                                }
+                                            }}
+                                            helpText="Range: -1 to 1 (-1: definitely dislike, 1: definitely like). Values outside this range will be clamped."
+                                        />
+                                    )}
                                 </div>
                             )}
 

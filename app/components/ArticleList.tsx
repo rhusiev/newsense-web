@@ -47,8 +47,13 @@ export function ArticleList({
     showSidebarToggle = false,
     onSidebarToggle,
 }: ArticleListProps) {
-    const { filterPrediction, filterPredictionThreshold, useClusters } =
-        useSettings();
+    const {
+        filterPrediction,
+        filterPredictionThreshold,
+        useClusters,
+        filterMode,
+        topPerDay,
+    } = useSettings();
 
     // A feed the model has barely seen scores its articles badly, so filtering
     // would leave it looking empty. Stay exempt until the feed is both old
@@ -67,6 +72,27 @@ export function ArticleList({
         feed?.read_count,
         filterPrediction,
         filterPredictionThreshold,
+    ]);
+
+    // Top-N exists only for the clustered "all" list; other lists keep the threshold.
+    const filterParams = useMemo(() => {
+        const ranksByDay =
+            filterPrediction &&
+            filterMode === "top" &&
+            useClusters &&
+            feed?.id === "all";
+        if (!ranksByDay) return { score_min: scoreMin };
+        return {
+            top_n: topPerDay,
+            tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        };
+    }, [
+        filterPrediction,
+        filterMode,
+        useClusters,
+        feed?.id,
+        topPerDay,
+        scoreMin,
     ]);
 
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
@@ -104,7 +130,7 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
-                score_min: scoreMin,
+                ...filterParams,
             };
 
             if (useClusters) {
@@ -138,7 +164,7 @@ export function ArticleList({
         } finally {
             setLoading(false);
         }
-    }, [feed, unreadOnly, onError, useClusters, scoreMin]);
+    }, [feed, unreadOnly, onError, useClusters, filterParams]);
 
     const loadMore = async () => {
         if (
@@ -163,7 +189,7 @@ export function ArticleList({
                 limit: 20,
                 before: cursor || undefined,
                 unread_only: unreadOnly,
-                score_min: scoreMin,
+                ...filterParams,
             };
 
             if (useClusters) {
@@ -235,7 +261,7 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
-                score_min: scoreMin,
+                ...filterParams,
             };
 
             if (useClusters) {

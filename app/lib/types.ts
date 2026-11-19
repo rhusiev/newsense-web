@@ -32,6 +32,8 @@ export interface Cluster {
     items: Item[];
     is_read?: boolean;
     liked?: number | null;
+    // Picked from below the day's top N so the model learns what it would hide.
+    explored?: boolean;
 }
 
 export interface User {
