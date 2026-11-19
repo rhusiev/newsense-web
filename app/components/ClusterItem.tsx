@@ -3,6 +3,7 @@ import {
     Check,
     CheckCheck,
     Circle,
+    Minus,
     ThumbsUp,
     ThumbsDown,
     MoreHorizontal,
@@ -38,6 +39,7 @@ export function ClusterItem({
 
     const isSingle = cluster.items.length === 1;
     const clusterLiked = cluster.items.every((i) => i.liked === 1);
+    const clusterNeutral = cluster.items.every((i) => i.liked === 0);
     const clusterDisliked = cluster.items.every((i) => i.liked === -1);
     const clusterRead = cluster.items.every((i) => i.is_read);
 
@@ -96,10 +98,11 @@ export function ClusterItem({
     }, [activeIndex]);
 
     const handleClusterLike = (val: number) => {
-        const newVal =
-            (val === 1 && clusterLiked) || (val === -1 && clusterDisliked)
-                ? null
-                : val;
+        const active =
+            (val === 1 && clusterLiked) ||
+            (val === 0 && clusterNeutral) ||
+            (val === -1 && clusterDisliked);
+        const newVal = active ? null : val;
         onUpdateClusterStatus(cluster.id, { liked: newVal, is_read: true });
     };
 
@@ -163,6 +166,14 @@ export function ClusterItem({
                                                 strokeWidth={1.5}
                                             />
                                         )}
+                                        {item.liked === 0 &&
+                                            !clusterNeutral && (
+                                                <Minus
+                                                    size={12}
+                                                    className="text-slate-500 ml-0.5"
+                                                    strokeWidth={2.5}
+                                                />
+                                            )}
                                         {item.liked === -1 &&
                                             !clusterDisliked && (
                                                 <ThumbsDown
@@ -211,6 +222,15 @@ export function ClusterItem({
                             defaultClass="text-slate-400 hover:text-emerald-600 hover:bg-slate-100"
                             onClick={() => handleClusterLike(1)}
                             title={isSingle ? "Like" : "Like All"}
+                        />
+                        <ActionButton
+                            icon={Minus}
+                            active={clusterNeutral}
+                            activeClass="bg-white text-slate-700 shadow-sm"
+                            defaultClass="text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                            shouldFill={false}
+                            onClick={() => handleClusterLike(0)}
+                            title={isSingle ? "Neutral" : "Neutral All"}
                         />
                         <ActionButton
                             icon={ThumbsDown}
@@ -310,6 +330,23 @@ function ItemMenuDropdown({
                             onClick={() =>
                                 handleItemAction({
                                     liked: activeItem.liked === 1 ? null : 1,
+                                    is_read: true,
+                                })
+                            }
+                        />
+                        <MenuItem
+                            icon={Minus}
+                            label={
+                                activeItem.liked === 0
+                                    ? "Unrate Current"
+                                    : "Neutral Current"
+                            }
+                            active={activeItem.liked === 0}
+                            colorClass="text-slate-700 hover:bg-slate-100"
+                            shouldFill={false}
+                            onClick={() =>
+                                handleItemAction({
+                                    liked: activeItem.liked === 0 ? null : 0,
                                     is_read: true,
                                 })
                             }

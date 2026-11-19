@@ -1,4 +1,4 @@
-import { Check, Circle, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Check, Circle, Minus, ThumbsUp, ThumbsDown } from "lucide-react";
 import type { Item } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
@@ -39,7 +39,9 @@ export function ArticleItem({
                             ? "bg-green-500"
                             : item.liked === -1
                               ? "bg-red-500"
-                              : "bg-gray-200"
+                              : item.liked === 0
+                                ? "bg-gray-400"
+                                : "bg-gray-200"
                     }`}
                 />
 
@@ -76,6 +78,16 @@ export function ArticleItem({
                                 defaultClass="text-gray-400 hover:text-green-600 hover:bg-green-50"
                                 onClick={() => onLikeToggle(item, 1)}
                                 title="More like this"
+                            />
+
+                            <ActionButton
+                                icon={Minus}
+                                active={item.liked === 0}
+                                activeClass="text-gray-700 bg-gray-100"
+                                defaultClass="text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                                shouldFill={false}
+                                onClick={() => onLikeToggle(item, 0)}
+                                title="Neutral"
                             />
 
                             <ActionButton
