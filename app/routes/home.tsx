@@ -49,7 +49,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
 function HomeContent() {
     const { user, logout } = useAuth();
-    const { filterPrediction, filterPredictionThreshold } = useSettings();
+    const {
+        filterPrediction,
+        filterPredictionThreshold,
+        filterMode,
+        useClusters,
+        topPerDay,
+        allArticlesTop,
+    } = useSettings();
 
     const [layoutMode, setLayoutMode] = useState<
         "loading" | "mobile" | "desktop"
@@ -154,12 +161,37 @@ function HomeContent() {
 
             setSubscribed(subsWithCounts);
             setOwned(ownedWithCounts);
-            setTotalUnread(counts.total_unread);
+            // In top-N mode the All Articles list shows stories, so its badge counts them.
+            const ranksAll =
+                filterPrediction &&
+                filterMode === "top" &&
+                useClusters &&
+                allArticlesTop !== "off";
+            setTotalUnread(
+                ranksAll
+                    ? (
+                          await api.getClusterUnreadCount({
+                              top_n: topPerDay,
+                              tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                              per_feed: allArticlesTop === "per_feed",
+                          })
+                      ).unread_count
+                    : counts.total_unread,
+            );
             setAllFeeds([...subsWithCounts, ...ownedWithCounts]);
         } catch (e) {
             console.error(e);
         }
-    }, [user, refreshKey, filterPrediction, filterPredictionThreshold]);
+    }, [
+        user,
+        refreshKey,
+        filterPrediction,
+        filterPredictionThreshold,
+        filterMode,
+        useClusters,
+        topPerDay,
+        allArticlesTop,
+    ]);
 
     useEffect(() => {
         loadData();
