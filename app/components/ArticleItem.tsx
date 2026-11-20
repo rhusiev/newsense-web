@@ -4,7 +4,6 @@ import { stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
 import { useState } from "react";
 import { ArticleReader } from "./reader/ArticleReader";
-import { useHasFullText } from "~/lib/full-text";
 import { useSettings } from "~/lib/settings-context";
 
 interface ArticleItemProps {
@@ -22,7 +21,6 @@ export function ArticleItem({
 }: ArticleItemProps) {
     const [reading, setReading] = useState(false);
     const { readerLayout } = useSettings();
-    const hasFullText = useHasFullText(item);
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return "";
         return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -58,7 +56,6 @@ export function ArticleItem({
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => {
-                            if (!hasFullText) return;
                             e.preventDefault();
                             setReading(true);
                         }}

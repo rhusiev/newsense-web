@@ -11,6 +11,8 @@ import {
 import { api } from "~/lib/api";
 import type { Item } from "~/lib/types";
 import type { ReaderLayout } from "~/lib/constants";
+import { stripHtml } from "~/lib/utils";
+import { useHasFullText } from "~/lib/full-text";
 import { ActionButton } from "../ui/ActionButton";
 
 const BODY =
@@ -20,18 +22,33 @@ const BODY =
 const IMAGE_BUTTON =
     "my-4 w-full py-6 rounded-lg border border-dashed border-slate-300 text-sm text-slate-500 hover:bg-slate-50 font-sans";
 
-type FullText = { state: "loading" } | { state: "ready"; html: string } | { state: "missing" };
+const VISIT_BUTTON =
+    "inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-brand-900 text-sm font-medium text-white shadow-sm hover:bg-brand-accent transition-colors";
 
-function useFullText(itemId: string): FullText {
-    const [text, setText] = useState<FullText>({ state: "loading" });
+type ArticleText =
+    | { state: "loading" }
+    | { state: "ready"; html: string }
+    | { state: "summary" };
+
+/** Full text when the feed has it on; the feed's summary otherwise. */
+function useArticleText(itemId: string, hasFullText: boolean): ArticleText {
+    const [text, setText] = useState<ArticleText>({ state: "loading" });
     useEffect(() => {
+        if (!hasFullText) {
+            setText({ state: "summary" });
+            return;
+        }
         setText({ state: "loading" });
         api.getFullText(itemId)
             .then((r: { html: string | null }) =>
-                setText(r?.html ? { state: "ready", html: r.html } : { state: "missing" }),
+                setText(
+                    r?.html
+                        ? { state: "ready", html: r.html }
+                        : { state: "summary" },
+                ),
             )
-            .catch(() => setText({ state: "missing" }));
-    }, [itemId]);
+            .catch(() => setText({ state: "summary" }));
+    }, [itemId, hasFullText]);
     return text;
 }
 
@@ -61,7 +78,9 @@ function Body({ html }: { html: string }) {
     return <div ref={ref} className={BODY} />;
 }
 
-function Article({ item, feedName, text }: { item: Item; feedName: string; text: FullText }) {
+function Article({ item, feedName, text }: { item: Item; feedName: string; text: ArticleText }) {
+    const summary = stripHtml(item.content).trim();
+
     return (
         <article className="max-w-[680px] mx-auto">
             <div className="text-[11px] font-bold uppercase tracking-wider text-brand-600 mb-2">
@@ -72,18 +91,23 @@ function Article({ item, feedName, text }: { item: Item; feedName: string; text:
             </h1>
             {text.state === "loading" && <p className="text-slate-400">Loading...</p>}
             {text.state === "ready" && <Body html={text.html} />}
-            {text.state === "missing" && (
-                <p className="text-slate-600">
-                    The full text is not available.{" "}
+            {text.state === "summary" && (
+                <div className="space-y-6">
+                    {summary && (
+                        <p className="text-[17px] leading-relaxed text-slate-800 font-serif whitespace-pre-line">
+                            {summary}
+                        </p>
+                    )}
                     <a
                         href={item.link}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-brand-700 underline"
+                        className={VISIT_BUTTON}
                     >
-                        Open the original
+                        <ExternalLink size={16} />
+                        Visit the website
                     </a>
-                </p>
+                </div>
             )}
         </article>
     );
@@ -131,7 +155,8 @@ interface ReaderProps {
 
 /** "sheet" slides over the list; "page" takes the list pane. Both keep actions at the bottom. */
 export function ArticleReader({ item, feedName, layout, onClose, onRate }: ReaderProps) {
-    const text = useFullText(item.id);
+    const hasFullText = useHasFullText(item);
+    const text = useArticleText(item.id, hasFullText);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();

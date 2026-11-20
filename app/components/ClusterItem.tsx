@@ -15,7 +15,6 @@ import type { Cluster } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
 import { ArticleReader } from "./reader/ArticleReader";
-import { useHasFullText } from "~/lib/full-text";
 import { useSettings } from "~/lib/settings-context";
 
 interface ClusterItemProps {
@@ -42,7 +41,6 @@ export function ClusterItem({
     if (!cluster.items || cluster.items.length === 0) return null;
 
     const activeItem = cluster.items[activeIndex];
-    const hasFullText = useHasFullText(activeItem);
 
     const isSingle = cluster.items.length === 1;
     const clusterLiked = cluster.items.every((i) => i.liked === 1);
@@ -213,7 +211,6 @@ export function ClusterItem({
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => {
-                        if (!hasFullText) return;
                         e.preventDefault();
                         setReading(true);
                     }}
