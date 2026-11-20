@@ -1,6 +1,6 @@
 import { CustomConfirmModal, ErrorToast } from "~/components/UIOverlay";
 import { AuthModal } from "~/components/AuthModal";
-import { FeedManageModal, FeedInfoModal, FeedTopNModal } from "~/components/FeedModals";
+import { FeedManageModal, FeedInfoModal, FeedFilterModal } from "~/components/FeedModals";
 import { SettingsModal } from "~/components/SettingsModal";
 import type { Feed, User } from "~/lib/types";
 
@@ -11,8 +11,8 @@ interface SharedModalsProps {
     setManageModal: (val: any) => void;
     infoModalFeed: Feed | null;
     setInfoModalFeed: (feed: Feed | null) => void;
-    topNModalFeed: Feed | null;
-    setTopNModalFeed: (feed: Feed | null) => void;
+    filterModalFeed: Feed | null;
+    setFilterModalFeed: (feed: Feed | null) => void;
     settingsOpen: boolean;
     setSettingsOpen: (val: boolean) => void;
     confirmConfig: any;
@@ -31,8 +31,8 @@ export function SharedModals({
     setManageModal,
     infoModalFeed,
     setInfoModalFeed,
-    topNModalFeed,
-    setTopNModalFeed,
+    filterModalFeed,
+    setFilterModalFeed,
     settingsOpen,
     setSettingsOpen,
     confirmConfig,
@@ -81,9 +81,9 @@ export function SharedModals({
                 />
             )}
             {user && (
-                <FeedTopNModal
-                    feed={topNModalFeed}
-                    onClose={() => setTopNModalFeed(null)}
+                <FeedFilterModal
+                    feed={filterModalFeed}
+                    onClose={() => setFilterModalFeed(null)}
                 />
             )}
             <SettingsModal

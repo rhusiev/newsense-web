@@ -20,21 +20,23 @@ import { createPortal } from "react-dom";
 import { Segmented } from "~/components/ui/Segmented";
 import {
     MAX_TOP_PER_DAY,
-    type AllArticlesTop,
-    type FilterMode,
+    type AllArticlesFilter,
     type ReaderLayout,
 } from "~/lib/constants";
 
-const FILTER_MODES: { mode: FilterMode; label: string }[] = [
+const ALL_ARTICLES_FILTERS: { mode: AllArticlesFilter; label: string }[] = [
+    { mode: "off", label: "Off" },
+    { mode: "score", label: "Score" },
     { mode: "top", label: "Top per day" },
-    { mode: "score", label: "Score threshold" },
+    { mode: "each", label: "Each feed's" },
 ];
 
-const ALL_ARTICLES_MODES: { mode: AllArticlesTop; label: string }[] = [
-    { mode: "per_feed", label: "Each feed's top" },
-    { mode: "merged", label: "One top for all" },
-    { mode: "off", label: "Off" },
-];
+const ALL_ARTICLES_HINTS: Record<AllArticlesFilter, string> = {
+    off: "Shows every story.",
+    score: "Hides stories scored below the threshold, in every feed.",
+    top: "Shows the day's best stories of all feeds together.",
+    each: "Uses each feed's own filter, then shows them together. Feeds with filtering off show every story.",
+};
 
 const READER_LAYOUTS: { mode: ReaderLayout; label: string }[] = [
     { mode: "sheet", label: "Over the list" },
@@ -51,18 +53,14 @@ export function SettingsModal({
     triggerConfirm: (config: any) => void;
 }) {
     const {
-        filterPrediction,
-        setFilterPrediction,
-        filterPredictionThreshold,
-        setFilterPredictionThreshold,
+        allArticlesFilter,
+        setAllArticlesFilter,
+        scoreThreshold,
+        setScoreThreshold,
         useClusters,
         setUseClusters,
-        filterMode,
-        setFilterMode,
         topPerDay,
         setTopPerDay,
-        allArticlesTop,
-        setAllArticlesTop,
         readerLayout,
         setReaderLayout,
     } = useSettings();
@@ -70,7 +68,7 @@ export function SettingsModal({
     const [isAdmin, setIsAdmin] = useState(false);
     const [activeTab, setActiveTab] = useState<"general" | "admin">("general");
     const [localThreshold, setLocalThreshold] = useState(
-        filterPredictionThreshold.toString(),
+        scoreThreshold.toString(),
     );
 
     useEffect(() => {
@@ -86,20 +84,20 @@ export function SettingsModal({
 
     useEffect(() => {
         const currentLocalVal = parseFloat(localThreshold);
-        if (currentLocalVal !== filterPredictionThreshold) {
-            setLocalThreshold(filterPredictionThreshold.toString());
+        if (currentLocalVal !== scoreThreshold) {
+            setLocalThreshold(scoreThreshold.toString());
         }
-    }, [filterPredictionThreshold]);
+    }, [scoreThreshold]);
 
     const handleCommit = () => {
         let val = parseFloat(localThreshold);
         if (isNaN(val)) {
-            setLocalThreshold(filterPredictionThreshold.toString());
+            setLocalThreshold(scoreThreshold.toString());
             return;
         }
 
         val = Math.max(-1, Math.min(1, val));
-        setFilterPredictionThreshold(val);
+        setScoreThreshold(val);
         setLocalThreshold(val.toString());
     };
 
@@ -139,117 +137,82 @@ export function SettingsModal({
                 {activeTab === "general" ? (
                     <div className="space-y-6">
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                            <div className="space-y-3">
                                 <div>
                                     <h3 className="text-sm font-medium text-brand-950">
-                                        AI Filtering
+                                        All Articles filter
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Hide articles that are predicted to be
-                                        irrelevant.
+                                        {ALL_ARTICLES_HINTS[allArticlesFilter]}
                                     </p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={filterPrediction}
-                                        onChange={(e) =>
-                                            setFilterPrediction(
-                                                e.target.checked,
+                                <Segmented
+                                    options={ALL_ARTICLES_FILTERS}
+                                    value={allArticlesFilter}
+                                    onChange={setAllArticlesFilter}
+                                />
+                                {allArticlesFilter === "score" && (
+                                    <Input
+                                        label="Minimum score"
+                                        type="number"
+                                        step="0.1"
+                                        min="-1"
+                                        max="1"
+                                        value={localThreshold}
+                                        onChange={(e) => {
+                                            let valStr = e.target.value;
+                                            let val = parseFloat(valStr);
+                                            if (!isNaN(val)) {
+                                                if (val > 1) {
+                                                    val = 1;
+                                                    valStr = "1";
+                                                } else if (val < -1) {
+                                                    val = -1;
+                                                    valStr = "-1";
+                                                }
+                                                setScoreThreshold(val);
+                                            }
+                                            setLocalThreshold(valStr);
+                                        }}
+                                        onBlur={handleCommit}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                handleCommit();
+                                                (
+                                                    e.target as HTMLInputElement
+                                                ).blur();
+                                            }
+                                        }}
+                                        helpText="Hides stories scored below this. Range: -1 to 1, where higher keeps more."
+                                    />
+                                )}
+                                {allArticlesFilter === "top" && (
+                                    <Input
+                                        label="Stories per day"
+                                        type="number"
+                                        step="1"
+                                        min="1"
+                                        max={MAX_TOP_PER_DAY}
+                                        value={topPerDay}
+                                        onChange={(e) => {
+                                            const val = parseInt(
+                                                e.target.value,
+                                                10,
+                                            );
+                                            if (
+                                                val >= 1 &&
+                                                val <= MAX_TOP_PER_DAY
                                             )
-                                        }
-                                        className="sr-only peer"
+                                                setTopPerDay(val);
+                                        }}
+                                        helpText="The day's best-scored stories, plus a few from lower down so the model learns what it would hide."
                                     />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
-                                </label>
+                                )}
+                                <p className="text-xs text-gray-500">
+                                    Each feed sets its own filter from its
+                                    menu.
+                                </p>
                             </div>
-
-                            {filterPrediction && (
-                                <div className="pl-4 border-l-2 border-brand-100 space-y-3">
-                                    <Segmented
-                                        options={FILTER_MODES}
-                                        value={filterMode}
-                                        onChange={setFilterMode}
-                                    />
-                                    {filterMode === "top" ? (
-                                        <>
-                                        <Input
-                                            label="Articles per day"
-                                            type="number"
-                                            step="1"
-                                            min="1"
-                                            max={MAX_TOP_PER_DAY}
-                                            value={topPerDay}
-                                            onChange={(e) => {
-                                                const val = parseInt(
-                                                    e.target.value,
-                                                    10,
-                                                );
-                                                if (
-                                                    val >= 1 &&
-                                                    val <= MAX_TOP_PER_DAY
-                                                )
-                                                    setTopPerDay(val);
-                                            }}
-                                            helpText="Each list shows the day's best-scored stories. A few come from lower down, so the model learns what it would hide. A feed can set its own number from its menu."
-                                        />
-                                        <div className="space-y-1">
-                                            <h4 className="text-xs font-medium text-brand-950">
-                                                All Articles
-                                            </h4>
-                                            <Segmented
-                                                options={ALL_ARTICLES_MODES}
-                                                value={allArticlesTop}
-                                                onChange={setAllArticlesTop}
-                                            />
-                                            <p className="text-xs text-gray-500">
-                                                {allArticlesTop === "per_feed"
-                                                    ? "Takes each feed's top stories, then shows them together."
-                                                    : allArticlesTop === "merged"
-                                                      ? "Shows the best stories of all feeds together, by the number above."
-                                                      : "Shows every story, without a daily limit."}
-                                            </p>
-                                        </div>
-                                        </>
-                                    ) : (
-                                        <Input
-                                            label="Filtering Threshold"
-                                            type="number"
-                                            step="0.1"
-                                            min="-1"
-                                            max="1"
-                                            value={localThreshold}
-                                            onChange={(e) => {
-                                                let valStr = e.target.value;
-                                                let val = parseFloat(valStr);
-                                                if (!isNaN(val)) {
-                                                    if (val > 1) {
-                                                        val = 1;
-                                                        valStr = "1";
-                                                    } else if (val < -1) {
-                                                        val = -1;
-                                                        valStr = "-1";
-                                                    }
-                                                    setFilterPredictionThreshold(
-                                                        val,
-                                                    );
-                                                }
-                                                setLocalThreshold(valStr);
-                                            }}
-                                            onBlur={handleCommit}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") {
-                                                    handleCommit();
-                                                    (
-                                                        e.target as HTMLInputElement
-                                                    ).blur();
-                                                }
-                                            }}
-                                            helpText="Range: -1 to 1 (-1: definitely dislike, 1: definitely like). Values outside this range will be clamped."
-                                        />
-                                    )}
-                                </div>
-                            )}
 
                             <div className="flex items-center justify-between">
                                 <div>
@@ -280,8 +243,8 @@ export function SettingsModal({
                                         Reader
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Where full articles open, for feeds with
-                                        full text on.
+                                        Where articles open. Every title opens
+                                        the reader.
                                     </p>
                                 </div>
                                 <Segmented

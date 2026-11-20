@@ -14,7 +14,7 @@ import {
     NEW_FEED_FILTER_GRACE_DAYS,
     NEW_FEED_FILTER_GRACE_READS,
 } from "~/lib/constants";
-import { isWithinDays } from "~/lib/utils";
+import { isWithinDays, browserTimeZone } from "~/lib/utils";
 import { ArticleItem } from "./ArticleItem";
 import { ClusterItem } from "./ClusterItem";
 import { EmptyState } from "./ui/EmptyState";
@@ -48,57 +48,53 @@ export function ArticleList({
     onSidebarToggle,
 }: ArticleListProps) {
     const {
-        filterPrediction,
-        filterPredictionThreshold,
+        allArticlesFilter,
+        scoreThreshold,
         useClusters,
-        filterMode,
         topPerDay,
-        feedTopN,
-        allArticlesTop,
+        feedFilters,
     } = useSettings();
 
+    // A feed applies its own filter; All Articles applies the Settings choice.
     // A feed the model has barely seen scores its articles badly, so filtering
     // would leave it looking empty. Stay exempt until the feed is both old
     // enough and read enough for the scores to be worth anything.
-    const scoreMin = useMemo(() => {
-        if (!filterPrediction) return undefined;
-        // "all" is synthetic and carries no history of its own, so it never qualifies.
-        if (feed?.id === "all") return filterPredictionThreshold;
-        const stillNew =
-            isWithinDays(feed?.created_at, NEW_FEED_FILTER_GRACE_DAYS) ||
-            (feed?.read_count ?? 0) < NEW_FEED_FILTER_GRACE_READS;
-        return stillNew ? undefined : filterPredictionThreshold;
+    const filterParams = useMemo(() => {
+        if (!feed) return {};
+        if (feed.id !== "all") {
+            const filter = feedFilters[feed.id];
+            if (!filter || filter.mode === "off") return {};
+            const stillNew =
+                isWithinDays(feed.created_at, NEW_FEED_FILTER_GRACE_DAYS) ||
+                (feed.read_count ?? 0) < NEW_FEED_FILTER_GRACE_READS;
+            if (stillNew) return {};
+            if (filter.mode === "score") {
+                return { score_min: filter.score_threshold ?? scoreThreshold };
+            }
+            return { top_n: filter.top_n ?? topPerDay, tz: browserTimeZone() };
+        }
+        switch (allArticlesFilter) {
+            case "off":
+                return {};
+            case "score":
+                return { score_min: scoreThreshold };
+            case "top":
+                return { top_n: topPerDay, tz: browserTimeZone() };
+            case "each":
+                return {
+                    top_n: topPerDay,
+                    tz: browserTimeZone(),
+                    per_feed: true,
+                };
+        }
     }, [
         feed?.id,
         feed?.created_at,
         feed?.read_count,
-        filterPrediction,
-        filterPredictionThreshold,
-    ]);
-
-    // Top-N ranks clusters only; the item list keeps the threshold.
-    const filterParams = useMemo(() => {
-        const ranksByDay = filterPrediction && filterMode === "top" && useClusters;
-        if (!ranksByDay) return { score_min: scoreMin };
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (feed?.id !== "all") {
-            return { top_n: feedTopN[feed?.id] ?? topPerDay, tz };
-        }
-        if (allArticlesTop === "off") return {};
-        return {
-            top_n: topPerDay,
-            tz,
-            per_feed: allArticlesTop === "per_feed",
-        };
-    }, [
-        filterPrediction,
-        filterMode,
-        useClusters,
-        feed?.id,
+        allArticlesFilter,
+        scoreThreshold,
         topPerDay,
-        feedTopN,
-        allArticlesTop,
-        scoreMin,
+        feedFilters,
     ]);
 
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);

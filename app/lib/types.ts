@@ -1,3 +1,5 @@
+import type { FeedFilterMode } from "./constants";
+
 export interface Feed {
     id: string;
     owner_id: string | null;
@@ -10,6 +12,13 @@ export interface Feed {
     unread_count?: number;
     read_count?: number;
     full_text?: boolean;
+}
+
+/** A feed's own filter: off, its score threshold, or its daily top N. */
+export interface FeedFilter {
+    mode: FeedFilterMode;
+    score_threshold: number | null;
+    top_n: number | null;
 }
 
 export interface Item {

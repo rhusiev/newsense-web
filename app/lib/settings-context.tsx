@@ -7,40 +7,34 @@ import {
   type ReactNode,
 } from "react";
 import { api } from "./api";
+import type { FeedFilter } from "./types";
 import {
-  DEFAULT_FILTER_PREDICTION,
-  DEFAULT_FILTER_PREDICTION_THRESHOLD,
-  DEFAULT_USE_CLUSTERS,
-  DEFAULT_FILTER_MODE,
-  DEFAULT_TOP_PER_DAY,
-  DEFAULT_ALL_ARTICLES_TOP,
+  DEFAULT_ALL_ARTICLES_FILTER,
   DEFAULT_READER_LAYOUT,
-  type AllArticlesTop,
-  type FilterMode,
+  DEFAULT_SCORE_THRESHOLD,
+  DEFAULT_TOP_PER_DAY,
+  DEFAULT_USE_CLUSTERS,
+  type AllArticlesFilter,
   type ReaderLayout,
 } from "./constants";
 
 interface Settings {
-  filterPrediction: boolean;
-  filterPredictionThreshold: number;
-  useClusters: boolean;
-  filterMode: FilterMode;
+  allArticlesFilter: AllArticlesFilter;
+  scoreThreshold: number;
   topPerDay: number;
-  allArticlesTop: AllArticlesTop;
+  useClusters: boolean;
   readerLayout: ReaderLayout;
-  /** Feeds with their own stories-per-day count; others use topPerDay. */
-  feedTopN: Record<string, number>;
+  /** Each feed's own filter by feed id. A feed absent here is off. */
+  feedFilters: Record<string, FeedFilter>;
 }
 
 interface SettingsContextType extends Settings {
-  setFilterPrediction: (value: boolean) => void;
-  setFilterPredictionThreshold: (value: number) => void;
-  setUseClusters: (value: boolean) => void;
-  setFilterMode: (value: FilterMode) => void;
+  setAllArticlesFilter: (value: AllArticlesFilter) => void;
+  setScoreThreshold: (value: number) => void;
   setTopPerDay: (value: number) => void;
-  setAllArticlesTop: (value: AllArticlesTop) => void;
+  setUseClusters: (value: boolean) => void;
   setReaderLayout: (value: ReaderLayout) => void;
-  setFeedTopN: (feedId: string, value: number | null) => void;
+  setFeedFilter: (feedId: string, filter: FeedFilter) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -51,36 +45,30 @@ const STORAGE_KEY = "newsense-settings";
 const SAVE_DELAY_MS = 500;
 
 const DEFAULTS: Settings = {
-  filterPrediction: DEFAULT_FILTER_PREDICTION,
-  filterPredictionThreshold: DEFAULT_FILTER_PREDICTION_THRESHOLD,
-  useClusters: DEFAULT_USE_CLUSTERS,
-  filterMode: DEFAULT_FILTER_MODE,
+  allArticlesFilter: DEFAULT_ALL_ARTICLES_FILTER,
+  scoreThreshold: DEFAULT_SCORE_THRESHOLD,
   topPerDay: DEFAULT_TOP_PER_DAY,
-  allArticlesTop: DEFAULT_ALL_ARTICLES_TOP,
+  useClusters: DEFAULT_USE_CLUSTERS,
   readerLayout: DEFAULT_READER_LAYOUT,
-  feedTopN: {},
+  feedFilters: {},
 };
 
 type ServerSettings = {
-  filter_prediction: boolean;
+  all_articles_filter: AllArticlesFilter;
   score_threshold: number;
-  use_clusters: boolean;
-  filter_mode: FilterMode;
   top_per_day: number;
-  all_articles_top: AllArticlesTop;
+  use_clusters: boolean;
   reader_layout: ReaderLayout;
-  feed_top_n: Record<string, number>;
+  feed_filters: Record<string, FeedFilter>;
 };
 
 const fromServer = (s: ServerSettings): Settings => ({
-  filterPrediction: s.filter_prediction,
-  filterPredictionThreshold: s.score_threshold,
-  useClusters: s.use_clusters,
-  filterMode: s.filter_mode,
+  allArticlesFilter: s.all_articles_filter,
+  scoreThreshold: s.score_threshold,
   topPerDay: s.top_per_day,
-  allArticlesTop: s.all_articles_top,
+  useClusters: s.use_clusters,
   readerLayout: s.reader_layout,
-  feedTopN: s.feed_top_n,
+  feedFilters: s.feed_filters,
 });
 
 function loadCached(): Settings {
@@ -125,29 +113,29 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, SAVE_DELAY_MS);
   };
 
-  const setFeedTopN = (feedId: string, value: number | null) => {
+  const setFeedFilter = (feedId: string, filter: FeedFilter) => {
     setSettings((s) => {
-      const feedTopN = { ...s.feedTopN };
-      if (value === null) delete feedTopN[feedId];
-      else feedTopN[feedId] = value;
-      return { ...s, feedTopN };
+      const feedFilters = { ...s.feedFilters };
+      if (filter.mode === "off") delete feedFilters[feedId];
+      else feedFilters[feedId] = filter;
+      return { ...s, feedFilters };
     });
-    api.setFeedTopN(feedId, value).catch((e) => console.error("Failed to save feed setting", e));
+    api
+      .setFeedFilter(feedId, filter)
+      .catch((e) => console.error("Failed to save feed filter", e));
   };
 
   return (
     <SettingsContext.Provider
       value={{
         ...settings,
-        setFilterPrediction: (v) => save("filterPrediction", v, { filter_prediction: v }),
-        setFilterPredictionThreshold: (v) =>
-          save("filterPredictionThreshold", v, { score_threshold: v }),
-        setUseClusters: (v) => save("useClusters", v, { use_clusters: v }),
-        setFilterMode: (v) => save("filterMode", v, { filter_mode: v }),
+        setAllArticlesFilter: (v) =>
+          save("allArticlesFilter", v, { all_articles_filter: v }),
+        setScoreThreshold: (v) => save("scoreThreshold", v, { score_threshold: v }),
         setTopPerDay: (v) => save("topPerDay", v, { top_per_day: v }),
-        setAllArticlesTop: (v) => save("allArticlesTop", v, { all_articles_top: v }),
+        setUseClusters: (v) => save("useClusters", v, { use_clusters: v }),
         setReaderLayout: (v) => save("readerLayout", v, { reader_layout: v }),
-        setFeedTopN,
+        setFeedFilter,
       }}
     >
       {children}

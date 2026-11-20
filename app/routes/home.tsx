@@ -3,6 +3,7 @@ import { data } from "react-router";
 import { AuthProvider, useAuth } from "~/lib/auth-context";
 import { SettingsProvider, useSettings } from "~/lib/settings-context";
 import { BASE_URL, api } from "~/lib/api";
+import { browserTimeZone } from "~/lib/utils";
 import type { Feed } from "~/lib/types";
 import { FullTextFeedsContext } from "~/lib/full-text";
 import type { Route } from "./+types/home";
@@ -49,14 +50,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
 function HomeContent() {
     const { user, logout } = useAuth();
-    const {
-        filterPrediction,
-        filterPredictionThreshold,
-        filterMode,
-        useClusters,
-        topPerDay,
-        allArticlesTop,
-    } = useSettings();
+    const { allArticlesFilter, scoreThreshold, topPerDay, useClusters } =
+        useSettings();
 
     const [layoutMode, setLayoutMode] = useState<
         "loading" | "mobile" | "desktop"
@@ -111,7 +106,7 @@ function HomeContent() {
         feed?: Feed | null;
     }>({ open: false, mode: "create" });
     const [infoModalFeed, setInfoModalFeed] = useState<Feed | null>(null);
-    const [topNModalFeed, setTopNModalFeed] = useState<Feed | null>(null);
+    const [filterModalFeed, setFilterModalFeed] = useState<Feed | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState<{
         isOpen: boolean;
@@ -135,14 +130,11 @@ function HomeContent() {
             return;
         }
         try {
-            const params = filterPrediction
-                ? { score_min: filterPredictionThreshold }
-                : {};
-
             const [subs, owns, counts] = await Promise.all([
                 api.getSubscribed(),
                 api.getOwned(),
-                api.getUnreadCounts(params),
+                // Feed badges count every unread article; a feed's own filter is a known gap here.
+                api.getUnreadCounts(),
             ]);
 
             const withCounts = (feed: Feed) => {
@@ -161,23 +153,28 @@ function HomeContent() {
 
             setSubscribed(subsWithCounts);
             setOwned(ownedWithCounts);
-            // In top-N mode the All Articles list shows stories, so its badge counts them.
-            const ranksAll =
-                filterPrediction &&
-                filterMode === "top" &&
+
+            // The All Articles badge follows that list's own filter.
+            let allUnread = counts.total_unread;
+            if (allArticlesFilter === "score") {
+                allUnread = (
+                    await api.getUnreadCounts({
+                        score_min: scoreThreshold,
+                    })
+                ).total_unread;
+            } else if (
                 useClusters &&
-                allArticlesTop !== "off";
-            setTotalUnread(
-                ranksAll
-                    ? (
-                          await api.getClusterUnreadCount({
-                              top_n: topPerDay,
-                              tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                              per_feed: allArticlesTop === "per_feed",
-                          })
-                      ).unread_count
-                    : counts.total_unread,
-            );
+                (allArticlesFilter === "top" || allArticlesFilter === "each")
+            ) {
+                allUnread = (
+                    await api.getClusterUnreadCount({
+                        top_n: topPerDay,
+                        tz: browserTimeZone(),
+                        per_feed: allArticlesFilter === "each",
+                    })
+                ).unread_count;
+            }
+            setTotalUnread(allUnread);
             setAllFeeds([...subsWithCounts, ...ownedWithCounts]);
         } catch (e) {
             console.error(e);
@@ -185,12 +182,10 @@ function HomeContent() {
     }, [
         user,
         refreshKey,
-        filterPrediction,
-        filterPredictionThreshold,
-        filterMode,
-        useClusters,
+        allArticlesFilter,
+        scoreThreshold,
         topPerDay,
-        allArticlesTop,
+        useClusters,
     ]);
 
     useEffect(() => {
@@ -281,8 +276,8 @@ function HomeContent() {
             case "info":
                 setInfoModalFeed(feed);
                 break;
-            case "top_n":
-                setTopNModalFeed(feed);
+            case "filter":
+                setFilterModalFeed(feed);
                 break;
             case "edit":
                 setManageModal({ open: true, mode: "edit", feed });
@@ -336,8 +331,8 @@ function HomeContent() {
         setManageModal,
         infoModalFeed,
         setInfoModalFeed,
-        topNModalFeed,
-        setTopNModalFeed,
+        filterModalFeed,
+        setFilterModalFeed,
         settingsOpen,
         setSettingsOpen,
         confirmConfig,

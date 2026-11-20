@@ -1,3 +1,5 @@
+import type { FeedFilter } from "./types";
+
 const PROD_URL = import.meta.env.VITE_API_URL || "http://localhost";
 
 export const BASE_URL = import.meta.env.PROD ? PROD_URL : "http://localhost";
@@ -258,10 +260,10 @@ export const api = {
             method: "PUT",
             body: JSON.stringify(data),
         }),
-    setFeedTopN: (feedId: string, topN: number | null) =>
-        fetchClient(`${BASE_URL}/feeds/${feedId}/top-n`, {
+    setFeedFilter: (feedId: string, filter: FeedFilter) =>
+        fetchClient(`${BASE_URL}/feeds/${feedId}/filter`, {
             method: "PUT",
-            body: JSON.stringify({ top_n: topN }),
+            body: JSON.stringify(filter),
         }),
 
     checkAdmin: () => fetchClient(`${BASE_URL}/admin`),

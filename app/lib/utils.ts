@@ -29,3 +29,8 @@ export function isWithinDays(
     if (Number.isNaN(parsed)) return false;
     return Date.now() - parsed < days * 24 * 60 * 60 * 1000;
 }
+
+/** The server groups top stories by the reader's day, so it needs the browser's zone. */
+export function browserTimeZone(): string {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}

@@ -6,7 +6,7 @@ import {
     Info,
     Edit,
     Trash2,
-    ListOrdered,
+    ListFilter,
 } from "lucide-react";
 import type { Feed } from "~/lib/types";
 
@@ -97,10 +97,10 @@ export function FeedItemMenu({
 
                 {!isVirtual && alreadySubscribed && (
                     <button
-                        onClick={(e) => handleMenuAction(e, "top_n")}
+                        onClick={(e) => handleMenuAction(e, "filter")}
                         className="flex w-full items-center gap-2 px-4 py-3 md:py-2.5 hover:bg-gray-50 active:bg-gray-100 text-left text-gray-800 font-medium transition-colors"
                     >
-                        <ListOrdered size={16} /> Stories per day
+                        <ListFilter size={16} /> Filter
                     </button>
                 )}
 

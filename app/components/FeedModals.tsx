@@ -15,8 +15,20 @@ import { Modal } from "~/components/ui/Modal";
 import { Input } from "~/components/ui/Input";
 import { Textarea } from "~/components/ui/Textarea";
 import { useSettings } from "~/lib/settings-context";
-import { MAX_TOP_PER_DAY } from "~/lib/constants";
+import { MAX_TOP_PER_DAY, type FeedFilterMode } from "~/lib/constants";
 import { Segmented } from "~/components/ui/Segmented";
+
+const FEED_FILTER_MODES: { mode: FeedFilterMode; label: string }[] = [
+    { mode: "off", label: "Off" },
+    { mode: "score", label: "Score" },
+    { mode: "top", label: "Top per day" },
+];
+
+const FEED_FILTER_HINTS: Record<FeedFilterMode, string> = {
+    off: "Shows every article of this feed.",
+    score: "Hides this feed's articles scored below the threshold.",
+    top: "Keeps this feed's best stories each day.",
+};
 
 interface FeedInfoModalProps {
     feed: Feed | null;
@@ -268,65 +280,90 @@ export function FeedManageModal({
     );
 }
 
-// Sets how many stories a day this feed shows in top-per-day mode.
-export function FeedTopNModal({
+// Sets this feed's own filter. It applies when the feed is opened and, in All
+// Articles under "Each feed's", to this feed's stories.
+export function FeedFilterModal({
     feed,
     onClose,
 }: {
     feed: Feed | null;
     onClose: () => void;
 }) {
-    const { feedTopN, topPerDay, setFeedTopN } = useSettings();
-    const own = feed ? feedTopN[feed.id] : undefined;
-    const [useOwn, setUseOwn] = useState(own !== undefined);
-    const [value, setValue] = useState(String(own ?? topPerDay));
+    const { feedFilters, scoreThreshold, topPerDay, setFeedFilter } = useSettings();
+    const current = feed ? feedFilters[feed.id] : undefined;
+    const [mode, setMode] = useState<FeedFilterMode>(current?.mode ?? "off");
+    const [score, setScore] = useState(
+        String(current?.score_threshold ?? scoreThreshold),
+    );
+    const [topN, setTopN] = useState(String(current?.top_n ?? topPerDay));
 
     useEffect(() => {
         if (!feed) return;
-        setUseOwn(own !== undefined);
-        setValue(String(own ?? topPerDay));
+        const filter = feedFilters[feed.id];
+        setMode(filter?.mode ?? "off");
+        setScore(String(filter?.score_threshold ?? scoreThreshold));
+        setTopN(String(filter?.top_n ?? topPerDay));
     }, [feed?.id]);
 
     if (!feed) return null;
-    const n = parseInt(value, 10);
-    const valid = n >= 1 && n <= MAX_TOP_PER_DAY;
+
+    const scoreValue = parseFloat(score);
+    const topValue = parseInt(topN, 10);
+    const scoreValid =
+        !Number.isNaN(scoreValue) && scoreValue >= -1 && scoreValue <= 1;
+    const topValid = topValue >= 1 && topValue <= MAX_TOP_PER_DAY;
+    const valid =
+        mode === "off" || (mode === "score" ? scoreValid : topValid);
 
     const save = () => {
-        if (!useOwn) setFeedTopN(feed.id, null);
-        else if (valid) setFeedTopN(feed.id, n);
-        else return;
+        if (!valid) return;
+        setFeedFilter(feed.id, {
+            mode,
+            score_threshold: mode === "score" ? scoreValue : null,
+            top_n: mode === "top" ? topValue : null,
+        });
         onClose();
     };
 
     return (
-        <Modal isOpen onClose={onClose} title="Stories per day" maxWidth="max-w-sm">
+        <Modal isOpen onClose={onClose} title="Filter" maxWidth="max-w-sm">
             <div className="p-6 space-y-4">
                 <p className="text-sm text-gray-600">
                     {feed.title || "Untitled Feed"}
                 </p>
                 <Segmented
-                    options={[
-                        { mode: "settings", label: `Same as Settings (${topPerDay})` },
-                        { mode: "own", label: "Own number" },
-                    ]}
-                    value={useOwn ? "own" : "settings"}
-                    onChange={(m) => setUseOwn(m === "own")}
+                    options={FEED_FILTER_MODES}
+                    value={mode}
+                    onChange={setMode}
                 />
-                {useOwn && (
+                <p className="text-xs text-gray-500">
+                    {FEED_FILTER_HINTS[mode]}
+                </p>
+                {mode === "score" && (
+                    <Input
+                        label="Minimum score"
+                        type="number"
+                        step="0.1"
+                        min="-1"
+                        max="1"
+                        value={score}
+                        onChange={(e) => setScore(e.target.value)}
+                        error={scoreValid ? undefined : "Use -1 to 1"}
+                        helpText="Range: -1 to 1, where higher keeps more."
+                    />
+                )}
+                {mode === "top" && (
                     <Input
                         label="Stories per day"
                         type="number"
                         step="1"
                         min="1"
                         max={MAX_TOP_PER_DAY}
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
-                        error={valid ? undefined : `Use 1 to ${MAX_TOP_PER_DAY}`}
+                        value={topN}
+                        onChange={(e) => setTopN(e.target.value)}
+                        error={topValid ? undefined : `Use 1 to ${MAX_TOP_PER_DAY}`}
                     />
                 )}
-                <p className="text-xs text-gray-500">
-                    Applies when Settings use "Top per day".
-                </p>
                 <div className="flex justify-end gap-2">
                     <Button type="button" variant="ghost" onClick={onClose}>
                         Cancel
@@ -335,7 +372,7 @@ export function FeedTopNModal({
                         type="button"
                         variant="primary"
                         onClick={save}
-                        disabled={useOwn && !valid}
+                        disabled={!valid}
                     >
                         Save
                     </Button>
