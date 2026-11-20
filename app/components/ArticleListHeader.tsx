@@ -1,6 +1,5 @@
 import { CheckCheck, RotateCw, Eye, EyeOff, PanelLeft } from "lucide-react";
 import { Button } from "./ui/Button";
-import { api } from "~/lib/api";
 
 interface ArticleListHeaderProps {
     feed: any;
@@ -11,11 +10,7 @@ interface ArticleListHeaderProps {
     onSync: () => void;
     unreadOnly: boolean;
     setUnreadOnly: (val: boolean) => void;
-    triggerConfirm: (config: any) => void;
-    onError: (msg: string) => void;
-    loadItems: () => void;
-    onItemRead: () => void;
-    useClusters: boolean;
+    onMarkRead: () => void;
 }
 
 export function ArticleListHeader({
@@ -27,38 +22,9 @@ export function ArticleListHeader({
     onSync,
     unreadOnly,
     setUnreadOnly,
-    triggerConfirm,
-    onError,
-    loadItems,
-    onItemRead,
-    useClusters,
+    onMarkRead,
 }: ArticleListHeaderProps) {
-    const handleMarkAllRead = () => {
-        triggerConfirm({
-            title: "Mark All Read",
-            message: "Mark all items in this view as read?",
-            onConfirm: async () => {
-                try {
-                    const since = "1970-01-01T00:00:00Z";
-                    if (useClusters) {
-                        if (feed.id === "all") {
-                            await api.markAllRead(since);
-                        } else {
-                            await api.markFeedClustersRead(feed.id, since);
-                        }
-                    } else {
-                        feed.id === "all"
-                            ? await api.markAllRead(since)
-                            : await api.markFeedRead(feed.id, since);
-                    }
-                    loadItems();
-                    onItemRead();
-                } catch (e) {
-                    onError("Action failed.");
-                }
-            },
-        });
-    };
+    const handleMarkAllRead = () => onMarkRead();
 
     return (
         <header
@@ -117,10 +83,10 @@ export function ArticleListHeader({
                 <Button
                     variant="ghost"
                     onClick={handleMarkAllRead}
-                    title="Mark all items in this list as read"
+                    title="Mark articles as read, up to a date"
                 >
                     <CheckCheck size={18} className="sm:mr-2" />
-                    <span className="hidden sm:inline">Mark All Read</span>
+                    <span className="hidden sm:inline">Mark Read</span>
                 </Button>
             </div>
         </header>

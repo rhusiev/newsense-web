@@ -22,6 +22,7 @@ interface DesktopLayoutProps {
     setManageModal: (val: any) => void;
     refreshKey: number;
     onItemRead: () => void;
+    onMarkRead: (feed: Feed) => void;
     feedMap: Map<string, string>;
     setError: (msg: string | null) => void;
     modalProps: any;
@@ -45,6 +46,7 @@ export function DesktopLayout({
     setManageModal,
     refreshKey,
     onItemRead,
+    onMarkRead,
     feedMap,
     setError,
     modalProps,
@@ -155,6 +157,7 @@ export function DesktopLayout({
                     feed={selectedFeed}
                     refreshKey={refreshKey}
                     onItemRead={onItemRead}
+                    onMarkRead={onMarkRead}
                     feedMap={feedMap}
                     triggerConfirm={triggerConfirm}
                     onError={setError}

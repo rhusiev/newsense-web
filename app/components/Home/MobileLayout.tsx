@@ -26,6 +26,7 @@ interface MobileLayoutProps {
     triggerConfirm: (config: any) => void;
     setError: (msg: string | null) => void;
     onItemRead: () => void;
+    onMarkRead: (feed: Feed) => void;
     subscribed: Feed[];
     getFilteredSubscribed: () => Feed[];
     getFilteredOwned: () => Feed[];
@@ -53,6 +54,7 @@ export function MobileLayout({
     triggerConfirm,
     setError,
     onItemRead,
+    onMarkRead,
     subscribed,
     getFilteredSubscribed,
     getFilteredOwned,
@@ -91,6 +93,7 @@ export function MobileLayout({
                         feed={selectedFeed}
                         refreshKey={refreshKey}
                         onItemRead={onItemRead}
+                        onMarkRead={onMarkRead}
                         feedMap={feedMap}
                         triggerConfirm={triggerConfirm}
                         onError={setError}

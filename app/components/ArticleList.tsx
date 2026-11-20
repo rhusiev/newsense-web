@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Loader2 } from "lucide-react";
 import { api } from "~/lib/api";
-import type { Item, Cluster } from "~/lib/types";
+import type { Item, Cluster, Feed } from "~/lib/types";
 import { useSettings } from "~/lib/settings-context";
 import {
     NEW_FEED_FILTER_GRACE_DAYS,
@@ -25,6 +25,7 @@ interface ArticleListProps {
     refreshKey: number;
     feedMap: Map<string, string>;
     onItemRead: () => void;
+    onMarkRead: (feed: Feed) => void;
     triggerConfirm: (config: any) => void;
     onError: (msg: string) => void;
     externalUnreadOnly?: boolean;
@@ -39,6 +40,7 @@ export function ArticleList({
     refreshKey,
     feedMap,
     onItemRead,
+    onMarkRead,
     triggerConfirm,
     onError,
     externalUnreadOnly,
@@ -366,7 +368,7 @@ export function ArticleList({
             );
             if (updates.is_read !== undefined) onItemRead();
         } catch (e) {
-            onError("Failed to update cluster status");
+            onError("Failed to update story status");
         }
     };
 
@@ -395,11 +397,7 @@ export function ArticleList({
                 onSync={handleSync}
                 unreadOnly={unreadOnly}
                 setUnreadOnly={setUnreadOnly}
-                triggerConfirm={triggerConfirm}
-                onError={onError}
-                loadItems={loadItems}
-                onItemRead={onItemRead}
-                useClusters={useClusters}
+                onMarkRead={() => feed && onMarkRead(feed)}
             />
 
             <div

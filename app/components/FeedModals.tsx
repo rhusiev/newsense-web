@@ -280,6 +280,72 @@ export function FeedManageModal({
     );
 }
 
+// Marks everything before a date, not just the filtered list. An empty date
+// marks every article.
+export function MarkReadModal({
+    feed,
+    onClose,
+    onDone,
+}: {
+    feed: Feed | null;
+    onClose: () => void;
+    onDone: () => void;
+}) {
+    const [date, setDate] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+
+    const save = async () => {
+        setSaving(true);
+        setError("");
+        try {
+            const since = "1970-01-01T00:00:00Z";
+            const before = date
+                ? new Date(`${date}T00:00:00`).toISOString()
+                : undefined;
+            if (feed) await api.markFeedRead(feed.id, since, before);
+            else await api.markAllRead(since, before);
+            onDone();
+            onClose();
+        } catch (e: any) {
+            setError(e.message || "Could not mark articles as read.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Modal isOpen onClose={onClose} title="Mark as read" maxWidth="max-w-sm">
+            <div className="p-6 space-y-4">
+                <p className="text-sm text-gray-600">
+                    {feed ? feed.title || "This feed" : "All your feeds"}
+                </p>
+                <Input
+                    label="Before date"
+                    type="date"
+                    lang="en-GB"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    helpText="Includes articles your filters hide. Leave empty to mark every article."
+                />
+                {error && <p className="text-xs text-red-500">{error}</p>}
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        onClick={save}
+                        isLoading={saving}
+                    >
+                        Mark as read
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
 // Sets this feed's own filter. It applies when the feed is opened and, in All
 // Articles under "Each feed's", to this feed's stories.
 export function FeedFilterModal({

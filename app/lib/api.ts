@@ -92,16 +92,59 @@ export const api = {
         return fetchClient(`${BASE_URL}/items/unread-counts?${query.toString()}`);
     },
 
-    markAllRead: (since: string) =>
+    getItemUnreadCount: (
+        params: {
+            score_min?: number;
+            score_max?: number;
+            top_n?: number;
+            tz?: string;
+            per_feed?: boolean;
+        } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.top_n !== undefined)
+            query.append("top_n", params.top_n.toString());
+        if (params.tz) query.append("tz", params.tz);
+        if (params.per_feed) query.append("per_feed", "true");
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
+        return fetchClient(`${BASE_URL}/items/unread-count?${query.toString()}`);
+    },
+
+    getFeedItemUnreadCount: (
+        feedId: string,
+        params: {
+            score_min?: number;
+            score_max?: number;
+            top_n?: number;
+            tz?: string;
+        } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.top_n !== undefined)
+            query.append("top_n", params.top_n.toString());
+        if (params.tz) query.append("tz", params.tz);
+        if (params.score_min !== undefined)
+            query.append("score_min", params.score_min.toString());
+        if (params.score_max !== undefined)
+            query.append("score_max", params.score_max.toString());
+        return fetchClient(
+            `${BASE_URL}/items/feed/${feedId}/unread-count?${query.toString()}`,
+        );
+    },
+
+    markAllRead: (since: string, before?: string) =>
         fetchClient(`${BASE_URL}/items/mark-read`, {
             method: "POST",
-            body: JSON.stringify({ since }),
+            body: JSON.stringify(before ? { since, before } : { since }),
         }),
 
-    markFeedRead: (feedId: string, since: string) =>
+    markFeedRead: (feedId: string, since: string, before?: string) =>
         fetchClient(`${BASE_URL}/items/feed/${feedId}/mark-read`, {
             method: "POST",
-            body: JSON.stringify({ since }),
+            body: JSON.stringify(before ? { since, before } : { since }),
         }),
 
     getFeedItems: (
@@ -225,11 +268,18 @@ export const api = {
             body: JSON.stringify(status),
         }),
 
-    markFeedClustersRead: (feedId: string, since: string) =>
-        fetchClient(`${BASE_URL}/clusters/feed/${feedId}/mark-read`, {
-            method: "POST",
-            body: JSON.stringify({ since }),
-        }),
+    getFeedClusterUnreadCount: (
+        feedId: string,
+        params: { top_n?: number; tz?: string } = {},
+    ) => {
+        const query = new URLSearchParams();
+        if (params.top_n !== undefined)
+            query.append("top_n", params.top_n.toString());
+        if (params.tz) query.append("tz", params.tz);
+        return fetchClient(
+            `${BASE_URL}/clusters/feed/${feedId}/unread-count?${query.toString()}`,
+        );
+    },
 
     getClusterUnreadCount: (
         params: {
@@ -239,8 +289,7 @@ export const api = {
             tz?: string;
             per_feed?: boolean;
         } = {},
-    ) => {
-        const query = new URLSearchParams();
+    ) => {        const query = new URLSearchParams();
         if (params.top_n !== undefined)
             query.append("top_n", params.top_n.toString());
         if (params.tz) query.append("tz", params.tz);
