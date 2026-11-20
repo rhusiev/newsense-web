@@ -217,11 +217,10 @@ export function SettingsModal({
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h3 className="text-sm font-medium text-brand-950">
-                                        Article Clustering
+                                        Stories
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Group similar articles together into
-                                        clusters.
+                                        Group similar articles into one story.
                                     </p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
