@@ -1,4 +1,4 @@
-import type { FeedFilter } from "./types";
+import type { FeedFilter, StorySummaryStatus } from "./types";
 
 const PROD_URL = import.meta.env.VITE_API_URL || "http://localhost";
 
@@ -259,6 +259,14 @@ export const api = {
         );
     },
 
+    getStorySummaryStatus: (storyId: string): Promise<StorySummaryStatus> =>
+        fetchClient(`${BASE_URL}/clusters/${storyId}/summary/status`),
+
+    refreshStorySummary: (storyId: string) =>
+        fetchClient(`${BASE_URL}/clusters/${storyId}/summary/refresh`, {
+            method: "POST",
+        }),
+
     updateClusterStatus: (
         clusterId: string,
         status: { is_read?: boolean; liked?: number | null },
@@ -304,6 +312,14 @@ export const api = {
     },
 
     getSettings: () => fetchClient(`${BASE_URL}/settings`),
+    getLlmKey: () => fetchClient(`${BASE_URL}/settings/llm-key`),
+    setLlmKey: (data: { base_url: string; model: string; api_key: string }) =>
+        fetchClient(`${BASE_URL}/settings/llm-key`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+        }),
+    deleteLlmKey: () =>
+        fetchClient(`${BASE_URL}/settings/llm-key`, { method: "DELETE" }),
     updateSettings: (data: Record<string, unknown>) =>
         fetchClient(`${BASE_URL}/settings`, {
             method: "PUT",
@@ -316,6 +332,12 @@ export const api = {
         }),
 
     checkAdmin: () => fetchClient(`${BASE_URL}/admin`),
+    getLlmUsers: () => fetchClient(`${BASE_URL}/admin/users/llm`),
+    setUserLlm: (userId: string, data: { allowed?: boolean; daily_limit?: number }) =>
+        fetchClient(`${BASE_URL}/admin/users/${userId}/llm`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+        }),
     getAdminCodes: () => fetchClient(`${BASE_URL}/admin/codes`),
     getAdminCodesCount: () => fetchClient(`${BASE_URL}/admin/codes/count`),
     generateAdminCodes: (count: number, uses?: number) =>

@@ -14,6 +14,7 @@ import type { ReaderLayout } from "~/lib/constants";
 import { stripHtml } from "~/lib/utils";
 import { useHasFullText } from "~/lib/full-text";
 import { ActionButton } from "../ui/ActionButton";
+import { StorySummary } from "./StorySummary";
 
 const BODY =
     "text-[17px] leading-relaxed text-slate-800 font-serif [&_p]:mb-4 [&_a]:text-brand-700 [&_a]:underline [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:text-slate-600 [&_img]:my-4 [&_img]:rounded-lg [&_img]:max-w-full";
@@ -83,6 +84,7 @@ function Article({ item, feedName, text }: { item: Item; feedName: string; text:
 
     return (
         <article className="max-w-[680px] mx-auto">
+            <StorySummary storyId={item.cluster_id} />
             <div className="text-[11px] font-bold uppercase tracking-wider text-brand-600 mb-2">
                 {feedName}
             </div>

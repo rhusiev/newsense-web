@@ -56,6 +56,17 @@ export interface AccessCode {
     uses_left: number;
 }
 
+export interface StorySummaryStatus {
+    // "ready", "pending" or "not-applicable".
+    status: string;
+    summary?: string;
+    model?: string;
+    updated_at?: string;
+    can_recreate: boolean;
+    used_today: number;
+    daily_limit: number;
+}
+
 export interface UnreadCountResponse {
     total_unread: number;
     feeds: {

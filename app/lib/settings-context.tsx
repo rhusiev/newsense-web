@@ -24,6 +24,10 @@ interface Settings {
   topPerDay: number;
   useClusters: boolean;
   readerLayout: ReaderLayout;
+  llmSummaries: boolean;
+  llmAllowed: boolean;
+  llmDailyLimit: number;
+  llmUsedToday: number;
   /** Each feed's own filter by feed id. A feed absent here is off. */
   feedFilters: Record<string, FeedFilter>;
 }
@@ -34,6 +38,7 @@ interface SettingsContextType extends Settings {
   setTopPerDay: (value: number) => void;
   setUseClusters: (value: boolean) => void;
   setReaderLayout: (value: ReaderLayout) => void;
+  setLlmSummaries: (value: boolean) => void;
   setFeedFilter: (feedId: string, filter: FeedFilter) => void;
 }
 
@@ -50,6 +55,10 @@ const DEFAULTS: Settings = {
   topPerDay: DEFAULT_TOP_PER_DAY,
   useClusters: DEFAULT_USE_CLUSTERS,
   readerLayout: DEFAULT_READER_LAYOUT,
+  llmSummaries: false,
+  llmAllowed: true,
+  llmDailyLimit: 70,
+  llmUsedToday: 0,
   feedFilters: {},
 };
 
@@ -59,6 +68,10 @@ type ServerSettings = {
   top_per_day: number;
   use_clusters: boolean;
   reader_layout: ReaderLayout;
+  llm_summaries: boolean;
+  llm_allowed: boolean;
+  llm_daily_limit: number;
+  llm_used_today: number;
   feed_filters: Record<string, FeedFilter>;
 };
 
@@ -68,6 +81,10 @@ const fromServer = (s: ServerSettings): Settings => ({
   topPerDay: s.top_per_day,
   useClusters: s.use_clusters,
   readerLayout: s.reader_layout,
+  llmSummaries: s.llm_summaries,
+  llmAllowed: s.llm_allowed,
+  llmDailyLimit: s.llm_daily_limit,
+  llmUsedToday: s.llm_used_today,
   feedFilters: s.feed_filters,
 });
 
@@ -135,6 +152,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setTopPerDay: (v) => save("topPerDay", v, { top_per_day: v }),
         setUseClusters: (v) => save("useClusters", v, { use_clusters: v }),
         setReaderLayout: (v) => save("readerLayout", v, { reader_layout: v }),
+        setLlmSummaries: (v) => save("llmSummaries", v, { llm_summaries: v }),
         setFeedFilter,
       }}
     >

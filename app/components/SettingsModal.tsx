@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { Segmented } from "~/components/ui/Segmented";
+import { LlmSettings } from "./LlmSettings";
+import { AdminLlmUsers } from "./AdminLlmUsers";
 import {
     MAX_TOP_PER_DAY,
     type AllArticlesFilter,
@@ -304,10 +306,15 @@ export function SettingsModal({
                                 />
                                 <ReaderLayoutPicture layout={readerLayout} />
                             </div>
+
+                            <LlmSettings />
                         </div>
                     </div>
                 ) : (
-                    <AdminCodesView triggerConfirm={triggerConfirm} />
+                    <div className="space-y-8">
+                        <AdminLlmUsers />
+                        <AdminCodesView triggerConfirm={triggerConfirm} />
+                    </div>
                 )}
             </div>
         </Modal>
