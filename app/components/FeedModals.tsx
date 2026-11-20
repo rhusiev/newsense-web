@@ -280,8 +280,15 @@ export function FeedManageModal({
     );
 }
 
-// Marks everything before a date, not just the filtered list. An empty date
-// marks every article.
+// Local date and time for a datetime-local input, which has no time zone.
+function localDateTime(): string {
+    const now = new Date();
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+}
+
+// Marks everything before a date, not just the filtered list.
 export function MarkReadModal({
     feed,
     onClose,
@@ -291,7 +298,7 @@ export function MarkReadModal({
     onClose: () => void;
     onDone: () => void;
 }) {
-    const [date, setDate] = useState("");
+    const [date, setDate] = useState(localDateTime);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -300,9 +307,7 @@ export function MarkReadModal({
         setError("");
         try {
             const since = "1970-01-01T00:00:00Z";
-            const before = date
-                ? new Date(`${date}T00:00:00`).toISOString()
-                : undefined;
+            const before = new Date(date || localDateTime()).toISOString();
             if (feed) await api.markFeedRead(feed.id, since, before);
             else await api.markAllRead(since, before);
             onDone();
@@ -321,12 +326,12 @@ export function MarkReadModal({
                     {feed ? feed.title || "This feed" : "All your feeds"}
                 </p>
                 <Input
-                    label="Before date"
-                    type="date"
+                    label="Before date and time"
+                    type="datetime-local"
                     lang="en-GB"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    helpText="Includes articles your filters hide. Leave empty to mark every article."
+                    helpText="Includes articles your filters hide. Change the time to reach later today."
                 />
                 {error && <p className="text-xs text-red-500">{error}</p>}
                 <div className="flex justify-end gap-2">

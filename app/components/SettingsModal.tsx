@@ -24,6 +24,57 @@ import {
     type ReaderLayout,
 } from "~/lib/constants";
 
+// A small picture of each layout: the sheet leaves the list visible on the
+// left, the page replaces it. Only the chosen one is tinted.
+function ReaderLayoutPicture({ layout }: { layout: ReaderLayout }) {
+    const lines = (count: number) =>
+        Array.from({ length: count }, (_, i) => (
+            <div
+                key={i}
+                className={`h-1 rounded-full ${i % 3 === 0 ? "w-4/5 bg-brand-200" : "w-full bg-gray-200"}`}
+            />
+        ));
+    return (
+        <div className="flex justify-center gap-6 py-1" aria-hidden="true">
+            {(["sheet", "page"] as const).map((mode) => (
+                <div key={mode} className="flex flex-col items-center gap-1.5">
+                    <div
+                        className={`w-24 h-16 rounded-lg border p-1.5 flex gap-1 ${
+                            layout === mode
+                                ? "border-brand-500 bg-brand-50"
+                                : "border-gray-200 bg-gray-50"
+                        }`}
+                    >
+                        {mode === "sheet" ? (
+                            <>
+                                <div className="w-1/2 space-y-1.5 pt-1">
+                                    {lines(5)}
+                                </div>
+                                <div className="w-1/2 rounded border border-gray-200 bg-white p-1.5 space-y-1.5">
+                                    {lines(4)}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="w-full rounded border border-gray-200 bg-white p-1.5 space-y-1.5">
+                                {lines(5)}
+                            </div>
+                        )}
+                    </div>
+                    <span
+                        className={`text-[10px] ${
+                            layout === mode
+                                ? "text-brand-700 font-medium"
+                                : "text-gray-400"
+                        }`}
+                    >
+                        {mode === "sheet" ? "Over list" : "Full page"}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 const ALL_ARTICLES_FILTERS: { mode: AllArticlesFilter; label: string }[] = [
     { mode: "off", label: "Off" },
     { mode: "score", label: "Score" },
@@ -251,6 +302,7 @@ export function SettingsModal({
                                     value={readerLayout}
                                     onChange={setReaderLayout}
                                 />
+                                <ReaderLayoutPicture layout={readerLayout} />
                             </div>
                         </div>
                     </div>
