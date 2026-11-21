@@ -12,6 +12,11 @@ const day = (value: string) =>
         day: "numeric", month: "short", year: "numeric",
     });
 
+const feedNameFor = (item: Item, feedMap: Map<string, string>) => {
+    const id = item.feed_ids.find((fid) => feedMap.has(fid));
+    return (id && feedMap.get(id)) || "Subscription";
+};
+
 /** A small entry point on a story card; the thread is only shown on demand. */
 export function StoryHistory({
     storyId,
@@ -122,11 +127,7 @@ export function StoryHistory({
             {reading && (
                 <ArticleReader
                     item={reading}
-                    feedName={
-                        (reading.feed_ids.find((id) => feedMap.has(id)) &&
-                            feedMap.get(reading.feed_ids.find((id) => feedMap.has(id))!)) ||
-                        "Subscription"
-                    }
+                    feedName={feedNameFor(reading, feedMap)}
                     context={
                         thread
                             ? `Story ${
