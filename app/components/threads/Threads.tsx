@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { api } from "~/lib/api";
 import type { Item, ThreadBrief, ThreadStory, ThreadTimeline } from "~/lib/types";
@@ -13,7 +13,7 @@ function Timeline({
     onOpen,
 }: {
     thread: ThreadTimeline;
-    onOpen: (item: Item) => void;
+    onOpen: (item: Item, index: number) => void;
 }) {
     const byDay = new Map<string, ThreadStory[]>();
     [...thread.stories].reverse().forEach((story) => {
@@ -30,19 +30,21 @@ function Timeline({
                 <section key={label} className="relative pl-6 pb-6 border-l-2 border-slate-200">
                     <span className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-brand-600" />
                     <h3 className="text-xs font-bold text-slate-500 mb-2">{label}</h3>
-                    {stories.map((story) => (
+                    {stories.map((story, index) => (
                         <button
                             key={story.id}
                             type="button"
                             className={`block text-left font-bold leading-snug ${
-                                story.is_read ? "text-slate-400" : "text-slate-900"
+                                story.is_read ? "text-slate-600" : "text-slate-900"
                             }`}
                             onClick={() => {
-                                api.getItem(story.item_id).then(onOpen).catch(() => {});
+                                api.getItem(story.item_id)
+                                    .then((item) => onOpen(item, index))
+                                    .catch(() => {});
                             }}
                         >
                             {story.title}
-                            <span className="ml-2 text-[10px] font-normal text-slate-400">
+                            <span className="ml-2 text-xs font-normal text-slate-500">
                                 {story.item_count} article{story.item_count === 1 ? "" : "s"}
                             </span>
                         </button>
@@ -53,15 +55,33 @@ function Timeline({
     );
 }
 
-export function Threads({ refreshKey }: { refreshKey: number }) {
+export function Threads({
+    refreshKey,
+    feedMap,
+}: {
+    refreshKey: number;
+    feedMap: Map<string, string>;
+}) {
     const [threads, setThreads] = useState<ThreadBrief[]>([]);
     const [open, setOpen] = useState<ThreadTimeline | null>(null);
     const [reading, setReading] = useState<Item | null>(null);
+    const [readingIndex, setReadingIndex] = useState<number | null>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
     const { readerLayout } = useSettings();
 
     useEffect(() => {
-        api.getThreads().then(setThreads).catch(() => setThreads([]));
+        api.getThreads().then(setThreads).catch(() => {});
     }, [refreshKey]);
+
+    useEffect(() => {
+        if (!open || reading) return;
+        panelRef.current?.focus();
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setOpen(null);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [open, reading]);
 
     if (!threads.length) return null;
 
@@ -70,13 +90,16 @@ export function Threads({ refreshKey }: { refreshKey: number }) {
             {threads.map((thread) => (
                 <article key={thread.id} className="bg-white border border-slate-100 rounded-xl shadow-sm p-5">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                        {day(thread.first_date)} – {day(thread.last_date)} · {thread.unread_count} unread of {thread.story_count}
+                        Story · {thread.story_count} updates · {day(thread.first_date)} – {day(thread.last_date)}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mb-2">
+                        {thread.unread_count} unread
                     </div>
                     <button
                         type="button"
                         className="text-left text-lg font-bold text-slate-900 leading-snug hover:text-brand-700"
                         onClick={() => {
-                            api.getStoryThread(thread.id)
+                            api.getThread(thread.id)
                                 .then(setOpen)
                                 .catch(() => {});
                         }}
@@ -89,9 +112,22 @@ export function Threads({ refreshKey }: { refreshKey: number }) {
             {open && (
                 <div className="fixed inset-0 z-50 flex justify-end">
                     <div className="absolute inset-0 bg-black/20" onClick={() => setOpen(null)} />
-                    <div className="relative w-full md:w-[720px] h-full bg-white shadow-2xl flex flex-col">
+                    <div
+                        ref={panelRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Story timeline"
+                        tabIndex={-1}
+                        className="relative w-full md:w-[720px] h-full bg-white shadow-2xl flex flex-col outline-none"
+                    >
                         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8">
-                            <Timeline thread={open} onOpen={setReading} />
+                            <Timeline
+                                thread={open}
+                                onOpen={(item, index) => {
+                                    setReading(item);
+                                    setReadingIndex(index);
+                                }}
+                            />
                         </div>
                         <div className="border-t border-slate-100 px-4 py-2 flex items-center justify-between bg-white">
                             <span className="text-xs text-slate-500">
@@ -100,7 +136,8 @@ export function Threads({ refreshKey }: { refreshKey: number }) {
                             <button
                                 type="button"
                                 onClick={() => setOpen(null)}
-                                title="Close"
+                                title="Close timeline"
+                                aria-label="Close timeline"
                                 className="p-2 text-slate-500 hover:text-slate-800"
                             >
                                 <X size={20} />
@@ -113,7 +150,16 @@ export function Threads({ refreshKey }: { refreshKey: number }) {
             {reading && (
                 <ArticleReader
                     item={reading}
-                    feedName="Story"
+                    feedName={
+                        (reading.feed_ids.find((id) => feedMap.has(id)) &&
+                            feedMap.get(reading.feed_ids.find((id) => feedMap.has(id))!)) ||
+                        "Subscription"
+                    }
+                    context={
+                        open && readingIndex !== null
+                            ? `Update ${readingIndex + 1} of ${open.stories.length} · ${day(open.stories[readingIndex].sort_date)}`
+                            : undefined
+                    }
                     layout={readerLayout}
                     onClose={() => setReading(null)}
                     onRate={(value) => {

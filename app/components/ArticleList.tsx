@@ -405,15 +405,15 @@ export function ArticleList({
                 ref={scrollRef}
                 className={`flex-1 overflow-y-auto ${isMobile ? "p-4 space-y-4" : "p-8 space-y-6"}`}
             >
+                {useClusters && feed?.id === "all" && (
+                    <Threads refreshKey={refreshKey} feedMap={feedMap} />
+                )}
                 {isEmpty && !loading ? (
                     <EmptyState className="py-20">
                         No articles found.
                     </EmptyState>
                 ) : (
                     <>
-                        {useClusters && feed?.id === "all" && (
-                            <Threads refreshKey={refreshKey} />
-                        )}
 
                         {useClusters &&
                             clusters.map((cluster) => (

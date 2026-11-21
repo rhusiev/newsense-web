@@ -161,6 +161,9 @@ export const api = {
             limit?: number;
             score_min?: number;
             score_max?: number;
+            top_n?: number;
+            tz?: string;
+            per_feed?: boolean;
         } = {},
     ) => {
         const query = new URLSearchParams();
@@ -171,6 +174,10 @@ export const api = {
             query.append("score_min", params.score_min.toString());
         if (params.score_max !== undefined)
             query.append("score_max", params.score_max.toString());
+        if (params.top_n !== undefined)
+            query.append("top_n", params.top_n.toString());
+        if (params.tz) query.append("tz", params.tz);
+        if (params.per_feed) query.append("per_feed", "true");
 
         return fetchClient(
             `${BASE_URL}/items/feed/${feedId}?${query.toString()}`,
@@ -184,6 +191,9 @@ export const api = {
             limit?: number;
             score_min?: number;
             score_max?: number;
+            top_n?: number;
+            tz?: string;
+            per_feed?: boolean;
         } = {},
     ) => {
         const query = new URLSearchParams();
@@ -194,6 +204,10 @@ export const api = {
             query.append("score_min", params.score_min.toString());
         if (params.score_max !== undefined)
             query.append("score_max", params.score_max.toString());
+        if (params.top_n !== undefined)
+            query.append("top_n", params.top_n.toString());
+        if (params.tz) query.append("tz", params.tz);
+        if (params.per_feed) query.append("per_feed", "true");
 
         return fetchClient(`${BASE_URL}/items?${query.toString()}`);
     },
@@ -212,6 +226,9 @@ export const api = {
 
     getThreads: (): Promise<ThreadBrief[]> =>
         fetchClient(`${BASE_URL}/threads`),
+
+    getThread: (threadId: string): Promise<ThreadTimeline> =>
+        fetchClient(`${BASE_URL}/threads/${threadId}`),
 
     getStoryThread: (storyId: string): Promise<ThreadTimeline> =>
         fetchClient(`${BASE_URL}/clusters/${storyId}/thread`),

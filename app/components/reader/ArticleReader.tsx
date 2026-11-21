@@ -79,12 +79,27 @@ function Body({ html }: { html: string }) {
     return <div ref={ref} className={BODY} />;
 }
 
-function Article({ item, feedName, text }: { item: Item; feedName: string; text: ArticleText }) {
+function Article({
+    item,
+    feedName,
+    text,
+    context,
+}: {
+    item: Item;
+    feedName: string;
+    text: ArticleText;
+    context?: string;
+}) {
     const summary = stripHtml(item.content).trim();
 
     return (
         <article className="max-w-[680px] mx-auto">
             <StorySummary storyId={item.cluster_id} />
+            {context && (
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    {context}
+                </p>
+            )}
             <div className="text-[11px] font-bold uppercase tracking-wider text-brand-600 mb-2">
                 {feedName}
             </div>
@@ -140,7 +155,7 @@ function BottomBar({
                     <ExternalLink size={16} />
                 </a>
             </div>
-            <button onClick={onClose} title="Close" className="p-2 text-slate-500 hover:text-slate-800">
+            <button onClick={onClose} title="Close reader" aria-label="Close reader" className="p-2 text-slate-500 hover:text-slate-800">
                 <X size={20} />
             </button>
         </div>
@@ -153,10 +168,11 @@ interface ReaderProps {
     layout: ReaderLayout;
     onClose: () => void;
     onRate: (v: number) => void;
+    context?: string;
 }
 
 /** "sheet" slides over the list; "page" takes the list pane. Both keep actions at the bottom. */
-export function ArticleReader({ item, feedName, layout, onClose, onRate }: ReaderProps) {
+export function ArticleReader({ item, feedName, layout, onClose, onRate, context }: ReaderProps) {
     const hasFullText = useHasFullText(item);
     const text = useArticleText(item.id, hasFullText);
 
@@ -168,7 +184,7 @@ export function ArticleReader({ item, feedName, layout, onClose, onRate }: Reade
 
     const content = (
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8">
-            <Article item={item} feedName={feedName} text={text} />
+            <Article item={item} feedName={feedName} text={text} context={context} />
         </div>
     );
     const bar = <BottomBar item={item} onRate={onRate} onClose={onClose} />;
