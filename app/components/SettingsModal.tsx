@@ -118,7 +118,9 @@ export function SettingsModal({
         setReaderLayout,
     } = useSettings();
 
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(
+        () => sessionStorage.getItem("newsense-admin") === "1",
+    );
     const [activeTab, setActiveTab] = useState<"general" | "admin">("general");
     const [localThreshold, setLocalThreshold] = useState(
         scoreThreshold.toString(),
@@ -127,10 +129,16 @@ export function SettingsModal({
     useEffect(() => {
         if (isOpen) {
             api.checkAdmin()
-                .then(() => setIsAdmin(true))
+                .then(() => {
+                    setIsAdmin(true);
+                    sessionStorage.setItem("newsense-admin", "1");
+                })
                 .catch((err) => {
                     console.error("Admin check failed:", err);
-                    setIsAdmin(false);
+                    // A rate limit or network error must not hide a known admin tab.
+                    if (sessionStorage.getItem("newsense-admin") !== "1") {
+                        setIsAdmin(false);
+                    }
                 });
         }
     }, [isOpen]);

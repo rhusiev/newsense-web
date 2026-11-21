@@ -132,7 +132,7 @@ export function MobileLayout({
                             />
                         )}
 
-                        {!user && mobileTab !== "discover" && (
+                        {!user && mobileTab !== "discover" && subscribed.length === 0 && (
                             <div className="text-center mt-20 px-6">
                                 <p className="text-gray-500 mb-4">
                                     Please log in to view your feeds.

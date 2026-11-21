@@ -13,8 +13,15 @@ export const BASE_URL = import.meta.env.PROD ? PROD_URL : "http://localhost";
 async function handleResponse(response: Response) {
     if (response.status === 204) return null;
     if (!response.ok) {
-        const errorBody = await response.text().catch(() => "");
-        throw new Error(errorBody || `API Error: ${response.statusText}`);
+        const text = await response.text().catch(() => "");
+        let message = text || `Request failed (${response.status}).`;
+        try {
+            const parsed = JSON.parse(text);
+            if (typeof parsed.error === "string") message = parsed.error;
+        } catch {
+            if (response.status === 429) message = "Too many requests. Try again shortly.";
+        }
+        throw new Error(message);
     }
 
     const contentType = response.headers.get("content-type");

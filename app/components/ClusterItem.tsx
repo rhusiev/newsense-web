@@ -201,7 +201,7 @@ export function ClusterItem({
                             <Shuffle size={12} className="text-slate-500" />
                         </span>
                     )}
-                    <StoryHistory storyId={cluster.id} />
+                    <StoryHistory storyId={cluster.id} feedMap={feedMap} />
                     <Calendar size={12} />
                     {formatDate(activeItem.published_at)}
                 </div>

@@ -25,6 +25,16 @@ export function AuthProvider({
 
     useEffect(() => {
         setUser(initialUser);
+        if (initialUser) return;
+        let alive = true;
+        api.me()
+            .then((result: User) => {
+                if (alive && result?.user_id) setUser(result);
+            })
+            .catch(() => {});
+        return () => {
+            alive = false;
+        };
     }, [initialUser]);
 
     const login = async (data: any) => {
