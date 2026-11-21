@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { api } from "./api";
+import { useAuth } from "./auth-context";
 import type { FeedFilter } from "./types";
 import {
   DEFAULT_ALL_ARTICLES_FILTER,
@@ -100,16 +101,18 @@ function loadCached(): Settings {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<Settings>(loadCached);
   const pending = useRef<Partial<ServerSettings>>({});
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (!user) return;
     api
       .getSettings()
       .then((s: ServerSettings) => setSettings(fromServer(s)))
-      .catch(() => {}); // signed out: keep the cached copy
-  }, []);
+      .catch(() => {});
+  }, [user?.user_id]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
