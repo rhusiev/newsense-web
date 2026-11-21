@@ -1,7 +1,6 @@
 import type {
     FeedFilter,
     StorySummaryStatus,
-    ThreadBrief,
     ThreadTimeline,
     Item,
 } from "./types";
@@ -230,12 +229,6 @@ export const api = {
             method: "PUT",
             body: JSON.stringify(status),
         }),
-
-    getThreads: (): Promise<ThreadBrief[]> =>
-        fetchClient(`${BASE_URL}/threads`),
-
-    getThread: (threadId: string): Promise<ThreadTimeline> =>
-        fetchClient(`${BASE_URL}/threads/${threadId}`),
 
     getStoryThread: (storyId: string): Promise<ThreadTimeline> =>
         fetchClient(`${BASE_URL}/clusters/${storyId}/thread`),

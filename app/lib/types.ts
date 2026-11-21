@@ -56,15 +56,6 @@ export interface AccessCode {
     uses_left: number;
 }
 
-export interface ThreadBrief {
-    id: string;
-    title: string;
-    first_date: string;
-    last_date: string;
-    story_count: number;
-    unread_count: number;
-}
-
 export interface ThreadStory {
     id: string;
     item_id: string;
