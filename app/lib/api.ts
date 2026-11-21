@@ -1,4 +1,10 @@
-import type { FeedFilter, StorySummaryStatus } from "./types";
+import type {
+    FeedFilter,
+    StorySummaryStatus,
+    ThreadBrief,
+    ThreadTimeline,
+    Item,
+} from "./types";
 
 const PROD_URL = import.meta.env.VITE_API_URL || "http://localhost";
 
@@ -203,6 +209,15 @@ export const api = {
             method: "PUT",
             body: JSON.stringify(status),
         }),
+
+    getThreads: (): Promise<ThreadBrief[]> =>
+        fetchClient(`${BASE_URL}/threads`),
+
+    getStoryThread: (storyId: string): Promise<ThreadTimeline> =>
+        fetchClient(`${BASE_URL}/clusters/${storyId}/thread`),
+
+    getItem: (itemId: string): Promise<Item> =>
+        fetchClient(`${BASE_URL}/items/${itemId}`),
 
     getGlobalClusters: (
         params: {

@@ -19,6 +19,7 @@ import { ArticleItem } from "./ArticleItem";
 import { ClusterItem } from "./ClusterItem";
 import { EmptyState } from "./ui/EmptyState";
 import { ArticleListHeader } from "./ArticleListHeader";
+import { Threads } from "./threads/Threads";
 
 interface ArticleListProps {
     feed: any;
@@ -410,6 +411,10 @@ export function ArticleList({
                     </EmptyState>
                 ) : (
                     <>
+                        {useClusters && feed?.id === "all" && (
+                            <Threads refreshKey={refreshKey} />
+                        )}
+
                         {useClusters &&
                             clusters.map((cluster) => (
                                 <ClusterItem
