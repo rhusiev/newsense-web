@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "~/lib/api";
 
 interface LlmUser {
@@ -8,31 +8,48 @@ interface LlmUser {
     llm_daily_limit: number;
 }
 
+const MIN_LIMIT = 1;
+const MAX_LIMIT = 10000;
+const SAVE_DELAY_MS = 400;
+
 /** Admin list of who may use summaries and each user's daily limit. */
 export function AdminLlmUsers() {
     const [users, setUsers] = useState<LlmUser[]>([]);
     const [error, setError] = useState("");
+    const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     useEffect(() => {
         api.getLlmUsers()
             .then((r: LlmUser[]) => setUsers(r))
             .catch(() => setError("Could not load users."));
+        return () => {
+            Object.values(timers.current).forEach(clearTimeout);
+        };
     }, []);
 
-    const update = async (user: LlmUser, patch: Partial<LlmUser>) => {
-        setUsers((list) =>
-            list.map((u) => (u.id === user.id ? { ...u, ...patch } : u)),
-        );
+    const save = async (user: LlmUser, patch: Partial<LlmUser>) => {
         try {
             await api.setUserLlm(user.id, {
-                allowed: (patch.llm_allowed ?? user.llm_allowed) as boolean,
+                allowed: patch.llm_allowed ?? user.llm_allowed,
                 daily_limit: patch.llm_daily_limit ?? user.llm_daily_limit,
             });
         } catch {
-            setUsers((list) =>
-                list.map((u) => (u.id === user.id ? user : u)),
-            );
+            setUsers((list) => list.map((u) => (u.id === user.id ? user : u)));
             setError("Could not save that change.");
+        }
+    };
+
+    const update = (user: LlmUser, patch: Partial<LlmUser>, debounce = false) => {
+        setUsers((list) =>
+            list.map((u) => (u.id === user.id ? { ...u, ...patch } : u)),
+        );
+        const timer = timers.current[user.id];
+        if (timer) clearTimeout(timer);
+        const apply = () => save(user, patch);
+        if (debounce) {
+            timers.current[user.id] = setTimeout(apply, SAVE_DELAY_MS);
+        } else {
+            apply();
         }
     };
 
@@ -68,14 +85,16 @@ export function AdminLlmUsers() {
                         </label>
                         <input
                             type="number"
-                            min={1}
-                            max={10000}
+                            min={MIN_LIMIT}
+                            max={MAX_LIMIT}
                             value={user.llm_daily_limit}
-                            onChange={(e) =>
-                                update(user, {
-                                    llm_daily_limit: Number(e.target.value),
-                                })
-                            }
+                            onChange={(e) => {
+                                const value = Math.min(
+                                    MAX_LIMIT,
+                                    Math.max(MIN_LIMIT, Number(e.target.value)),
+                                );
+                                update(user, { llm_daily_limit: value }, true);
+                            }}
                             className="w-20 px-2 py-1 border border-gray-200 rounded text-xs"
                             aria-label={`Daily limit for ${user.username}`}
                         />

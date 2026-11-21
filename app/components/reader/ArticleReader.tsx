@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useFocusTrap } from "~/lib/focus_trap";
 import { createPortal } from "react-dom";
 import {
     ArrowLeft,
@@ -175,6 +176,8 @@ interface ReaderProps {
 export function ArticleReader({ item, feedName, layout, onClose, onRate, context }: ReaderProps) {
     const hasFullText = useHasFullText(item);
     const text = useArticleText(item.id, hasFullText);
+    const panelRef = useRef<HTMLDivElement>(null);
+    useFocusTrap(panelRef, true);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -192,7 +195,14 @@ export function ArticleReader({ item, feedName, layout, onClose, onRate, context
     if (layout === "page") {
         const pane = document.getElementById("list-pane");
         const page = (
-            <div className="absolute inset-0 z-30 bg-white flex flex-col">
+            <div
+                ref={panelRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Article"
+                tabIndex={-1}
+                className="absolute inset-0 z-30 bg-white flex flex-col outline-none"
+            >
                 <div className="hidden md:block px-8 py-3 border-b border-slate-100">
                     <button onClick={onClose} className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
                         <ArrowLeft size={20} />
@@ -209,7 +219,14 @@ export function ArticleReader({ item, feedName, layout, onClose, onRate, context
     return createPortal(
         <div className="fixed inset-0 z-50 flex justify-end">
             <div className="absolute inset-0 bg-black/20" onClick={onClose} />
-            <div className="relative w-full md:w-[720px] h-full bg-white shadow-2xl flex flex-col">
+            <div
+                ref={panelRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Article"
+                tabIndex={-1}
+                className="relative w-full md:w-[720px] h-full bg-white shadow-2xl flex flex-col outline-none"
+            >
                 {content}
                 {bar}
             </div>

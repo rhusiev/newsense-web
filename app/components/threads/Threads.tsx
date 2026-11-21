@@ -4,9 +4,12 @@ import { api } from "~/lib/api";
 import type { Item, ThreadBrief, ThreadStory, ThreadTimeline } from "~/lib/types";
 import { ArticleReader } from "../reader/ArticleReader";
 import { useSettings } from "~/lib/settings-context";
+import { useFocusTrap } from "~/lib/focus_trap";
 
 const day = (value: string) =>
-    new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    new Date(value).toLocaleDateString("en-GB", {
+        day: "numeric", month: "short", year: "numeric",
+    });
 
 function Timeline({
     thread,
@@ -44,8 +47,11 @@ function Timeline({
                             }}
                         >
                             {story.title}
-                            <span className="ml-2 text-xs font-normal text-slate-500">
-                                {story.item_count} article{story.item_count === 1 ? "" : "s"}
+                            <span
+                                className="ml-2 text-xs font-normal text-slate-500"
+                                title={`Opens the first of ${story.item_count} articles in this update`}
+                            >
+                                {story.item_count} article{story.item_count === 1 ? "" : "s"} · opens first
                             </span>
                         </button>
                     ))}
@@ -68,6 +74,7 @@ export function Threads({
     const [readingIndex, setReadingIndex] = useState<number | null>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const { readerLayout } = useSettings();
+    useFocusTrap(panelRef, Boolean(open) && !reading);
 
     useEffect(() => {
         api.getThreads().then(setThreads).catch(() => {});
