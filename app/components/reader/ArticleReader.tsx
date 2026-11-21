@@ -95,7 +95,6 @@ function Article({
 
     return (
         <article className="max-w-[680px] mx-auto">
-            <StorySummary storyId={item.cluster_id} />
             {context && (
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
                     {context}
@@ -107,6 +106,7 @@ function Article({
             <h1 className="font-serif text-3xl leading-tight text-slate-900 mb-6">
                 {item.title}
             </h1>
+            <StorySummary storyId={item.cluster_id} />
             {text.state === "loading" && <p className="text-slate-400">Loading...</p>}
             {text.state === "ready" && <Body html={text.html} />}
             {text.state === "summary" && (

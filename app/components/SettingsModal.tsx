@@ -159,7 +159,7 @@ export function SettingsModal({
             isOpen={isOpen}
             onClose={onClose}
             title={activeTab === "admin" ? "Admin Settings" : "Settings"}
-            maxWidth={activeTab === "admin" ? "max-w-4xl" : "max-w-md"}
+            maxWidth={activeTab === "admin" ? "max-w-4xl" : "max-w-2xl"}
         >
             {isAdmin && (
                 <div className="px-6 pt-4">

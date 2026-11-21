@@ -15,6 +15,7 @@ import type { Cluster } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
 import { ArticleReader } from "./reader/ArticleReader";
+import { StoryHistory } from "./threads/StoryHistory";
 import { useSettings } from "~/lib/settings-context";
 
 interface ClusterItemProps {
@@ -200,6 +201,7 @@ export function ClusterItem({
                             <Shuffle size={12} className="text-slate-500" />
                         </span>
                     )}
+                    <StoryHistory storyId={cluster.id} />
                     <Calendar size={12} />
                     {formatDate(activeItem.published_at)}
                 </div>
