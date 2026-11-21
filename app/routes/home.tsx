@@ -186,13 +186,16 @@ function HomeContent() {
                 return r.unread_count;
             };
 
+            const withFilteredCount = async (feed: Feed) => ({
+                ...feed,
+                unread_count: await feedBadge(feed),
+            });
             const subsWithCounts = await Promise.all(
-                subs.map(withCounts).map(async (feed: Feed) => ({
-                    ...feed,
-                    unread_count: await feedBadge(feed),
-                })),
+                subs.map(withCounts).map(withFilteredCount),
             );
-            const ownedWithCounts = owns.map(withCounts);
+            const ownedWithCounts = await Promise.all(
+                owns.map(withCounts).map(withFilteredCount),
+            );
 
             setSubscribed(subsWithCounts);
             setOwned(ownedWithCounts);
