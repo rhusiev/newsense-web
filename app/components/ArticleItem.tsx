@@ -1,7 +1,10 @@
-import { Check, Circle, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Check, Circle, Minus, ThumbsUp, ThumbsDown } from "lucide-react";
 import type { Item } from "~/lib/types";
 import { stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
+import { useState } from "react";
+import { ArticleReader } from "./reader/ArticleReader";
+import { useSettings } from "~/lib/settings-context";
 
 interface ArticleItemProps {
     item: Item;
@@ -16,6 +19,8 @@ export function ArticleItem({
     onUpdateStatus,
     onLikeToggle,
 }: ArticleItemProps) {
+    const [reading, setReading] = useState(false);
+    const { readerLayout } = useSettings();
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return "";
         return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -39,7 +44,9 @@ export function ArticleItem({
                             ? "bg-green-500"
                             : item.liked === -1
                               ? "bg-red-500"
-                              : "bg-gray-200"
+                              : item.liked === 0
+                                ? "bg-gray-400"
+                                : "bg-gray-200"
                     }`}
                 />
 
@@ -48,6 +55,10 @@ export function ArticleItem({
                         href={item.link}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setReading(true);
+                        }}
                         className="w-fit block text-lg font-bold text-gray-900 mb-2 leading-tight hover:underline decoration-brand-accent decoration-2 underline-offset-2"
                     >
                         {item.title}
@@ -56,6 +67,15 @@ export function ArticleItem({
                     <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed mb-3">
                         {stripHtml(item.content).substring(0, 200)}...
                     </p>
+                    {reading && (
+                        <ArticleReader
+                            item={item}
+                            feedName={feedName}
+                            layout={readerLayout}
+                            onClose={() => setReading(false)}
+                            onRate={(v) => onLikeToggle(item, v)}
+                        />
+                    )}
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-baseline gap-2">
@@ -76,6 +96,16 @@ export function ArticleItem({
                                 defaultClass="text-gray-400 hover:text-green-600 hover:bg-green-50"
                                 onClick={() => onLikeToggle(item, 1)}
                                 title="More like this"
+                            />
+
+                            <ActionButton
+                                icon={Minus}
+                                active={item.liked === 0}
+                                activeClass="text-gray-700 bg-gray-100"
+                                defaultClass="text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                                shouldFill={false}
+                                onClick={() => onLikeToggle(item, 0)}
+                                title="Neutral"
                             />
 
                             <ActionButton

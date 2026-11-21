@@ -1,3 +1,5 @@
+import type { FeedFilterMode } from "./constants";
+
 export interface Feed {
     id: string;
     owner_id: string | null;
@@ -9,6 +11,14 @@ export interface Feed {
     created_at: string;
     unread_count?: number;
     read_count?: number;
+    full_text?: boolean;
+}
+
+/** A feed's own filter: off, its score threshold, or its daily top N. */
+export interface FeedFilter {
+    mode: FeedFilterMode;
+    score_threshold: number | null;
+    top_n: number | null;
 }
 
 export interface Item {
@@ -20,7 +30,7 @@ export interface Item {
     author: string | null;
     published_at: string;
     is_read: boolean;
-    liked: number; // 0, 1, or -1
+    liked: number | null; // 1, 0 or -1; null until rated
     cluster_id: string | null;
     prediction_score?: number;
 }
@@ -31,7 +41,9 @@ export interface Cluster {
     sort_date: string;
     items: Item[];
     is_read?: boolean;
-    liked?: number;
+    liked?: number | null;
+    // Picked from below the day's top N so the model learns what it would hide.
+    explored?: boolean;
 }
 
 export interface User {
@@ -42,6 +54,42 @@ export interface User {
 export interface AccessCode {
     code: string;
     uses_left: number;
+}
+
+export interface ThreadBrief {
+    id: string;
+    title: string;
+    first_date: string;
+    last_date: string;
+    story_count: number;
+    unread_count: number;
+}
+
+export interface ThreadStory {
+    id: string;
+    item_id: string;
+    title: string;
+    sort_date: string;
+    item_count: number;
+    is_read: boolean;
+    liked: number | null;
+}
+
+export interface ThreadTimeline {
+    id: string;
+    title: string;
+    stories: ThreadStory[];
+}
+
+export interface StorySummaryStatus {
+    // "ready", "pending" or "not-applicable".
+    status: string;
+    summary?: string;
+    model?: string;
+    updated_at?: string;
+    can_recreate: boolean;
+    used_today: number;
+    daily_limit: number;
 }
 
 export interface UnreadCountResponse {

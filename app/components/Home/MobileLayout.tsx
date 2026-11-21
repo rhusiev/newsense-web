@@ -26,6 +26,7 @@ interface MobileLayoutProps {
     triggerConfirm: (config: any) => void;
     setError: (msg: string | null) => void;
     onItemRead: () => void;
+    onMarkRead: (feed: Feed) => void;
     subscribed: Feed[];
     getFilteredSubscribed: () => Feed[];
     getFilteredOwned: () => Feed[];
@@ -53,6 +54,7 @@ export function MobileLayout({
     triggerConfirm,
     setError,
     onItemRead,
+    onMarkRead,
     subscribed,
     getFilteredSubscribed,
     getFilteredOwned,
@@ -85,12 +87,13 @@ export function MobileLayout({
                 onLoginClick={() => setAuthModal({ open: true, view: "login" })}
             />
 
-            <main className="flex-1 overflow-hidden relative flex flex-col">
+            <main id="list-pane" className="flex-1 overflow-hidden relative flex flex-col">
                 {selectedFeed ? (
                     <ArticleList
                         feed={selectedFeed}
                         refreshKey={refreshKey}
                         onItemRead={onItemRead}
+                        onMarkRead={onMarkRead}
                         feedMap={feedMap}
                         triggerConfirm={triggerConfirm}
                         onError={setError}

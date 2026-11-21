@@ -1,5 +1,13 @@
 import { createPortal } from "react-dom";
-import { Plus, Minus, CheckCircle, Info, Edit, Trash2 } from "lucide-react";
+import {
+    Plus,
+    Minus,
+    CheckCircle,
+    Info,
+    Edit,
+    Trash2,
+    ListFilter,
+} from "lucide-react";
 import type { Feed } from "~/lib/types";
 
 interface FeedItemMenuProps {
@@ -84,6 +92,15 @@ export function FeedItemMenu({
                         className="flex w-full items-center gap-2 px-4 py-3 md:py-2.5 hover:bg-gray-50 active:bg-gray-100 text-left text-gray-800 font-medium transition-colors"
                     >
                         <Info size={16} /> Feed Info
+                    </button>
+                )}
+
+                {!isVirtual && alreadySubscribed && (
+                    <button
+                        onClick={(e) => handleMenuAction(e, "filter")}
+                        className="flex w-full items-center gap-2 px-4 py-3 md:py-2.5 hover:bg-gray-50 active:bg-gray-100 text-left text-gray-800 font-medium transition-colors"
+                    >
+                        <ListFilter size={16} /> Filter
                     </button>
                 )}
 

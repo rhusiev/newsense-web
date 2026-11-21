@@ -1,0 +1,74 @@
+import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
+import { api } from "~/lib/api";
+import type { StorySummaryStatus } from "~/lib/types";
+
+/** A quiet, tinted card above the article. Nothing shows when summaries do not apply. */
+export function StorySummary({ storyId }: { storyId: string | null }) {
+    const [status, setStatus] = useState<StorySummaryStatus | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+
+    useEffect(() => {
+        let alive = true;
+        setStatus(null);
+        if (storyId) {
+            api.getStorySummaryStatus(storyId)
+                .then((result) => alive && setStatus(result))
+                .catch(() => {});
+        }
+        return () => {
+            alive = false;
+        };
+    }, [storyId]);
+
+    const recreate = useCallback(async () => {
+        if (!storyId) return;
+        setRefreshing(true);
+        try {
+            await api.refreshStorySummary(storyId);
+            setStatus({ ...(await api.getStorySummaryStatus(storyId)), status: "pending" });
+        } catch {
+            // The existing summary stays on screen if the request fails.
+        } finally {
+            setRefreshing(false);
+        }
+    }, [storyId]);
+
+    if (!status || status.status === "not-applicable") return null;
+
+    if (status.status === "pending" || refreshing) {
+        return (
+            <div className="mb-8 rounded-xl border border-brand-100 bg-brand-50/60 px-5 py-4">
+                <p className="text-sm text-brand-700 font-medium">
+                    Summary is being prepared
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mb-8 rounded-xl border border-brand-100 bg-brand-50/60 px-5 py-4">
+            <div className="flex items-baseline justify-between gap-3 mb-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
+                    Story summary
+                </p>
+                {status.can_recreate && (
+                    <button
+                        type="button"
+                        onClick={recreate}
+                        className="flex items-center gap-1 text-xs text-brand-700 hover:underline"
+                    >
+                        <RefreshCw size={12} />
+                        Recreate
+                    </button>
+                )}
+            </div>
+            <p className="text-[15px] leading-relaxed text-slate-700 font-serif whitespace-pre-line">
+                {status.summary}
+            </p>
+            <p className="mt-3 text-[10px] text-brand-500/80">
+                {status.used_today} of {status.daily_limit} used today
+            </p>
+        </div>
+    );
+}

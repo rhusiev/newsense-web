@@ -17,6 +17,84 @@ import {
     Check,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { Segmented } from "~/components/ui/Segmented";
+import { LlmSettings } from "./LlmSettings";
+import { AdminLlmUsers } from "./AdminLlmUsers";
+import {
+    MAX_TOP_PER_DAY,
+    type AllArticlesFilter,
+    type ReaderLayout,
+} from "~/lib/constants";
+
+// A small picture of each layout: the sheet leaves the list visible on the
+// left, the page replaces it. Only the chosen one is tinted.
+function ReaderLayoutPicture({ layout }: { layout: ReaderLayout }) {
+    const lines = (count: number) =>
+        Array.from({ length: count }, (_, i) => (
+            <div
+                key={i}
+                className={`h-1 rounded-full ${i % 3 === 0 ? "w-4/5 bg-brand-200" : "w-full bg-gray-200"}`}
+            />
+        ));
+    return (
+        <div className="flex justify-center gap-6 py-1" aria-hidden="true">
+            {(["sheet", "page"] as const).map((mode) => (
+                <div key={mode} className="flex flex-col items-center gap-1.5">
+                    <div
+                        className={`w-24 h-16 rounded-lg border p-1.5 flex gap-1 ${
+                            layout === mode
+                                ? "border-brand-500 bg-brand-50"
+                                : "border-gray-200 bg-gray-50"
+                        }`}
+                    >
+                        {mode === "sheet" ? (
+                            <>
+                                <div className="w-1/2 space-y-1.5 pt-1">
+                                    {lines(5)}
+                                </div>
+                                <div className="w-1/2 rounded border border-gray-200 bg-white p-1.5 space-y-1.5">
+                                    {lines(4)}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="w-full rounded border border-gray-200 bg-white p-1.5 space-y-1.5">
+                                {lines(5)}
+                            </div>
+                        )}
+                    </div>
+                    <span
+                        className={`text-[10px] ${
+                            layout === mode
+                                ? "text-brand-700 font-medium"
+                                : "text-gray-400"
+                        }`}
+                    >
+                        {mode === "sheet" ? "Over list" : "Full page"}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+const ALL_ARTICLES_FILTERS: { mode: AllArticlesFilter; label: string }[] = [
+    { mode: "off", label: "Off" },
+    { mode: "score", label: "Score" },
+    { mode: "top", label: "Top per day" },
+    { mode: "each", label: "Each feed's" },
+];
+
+const ALL_ARTICLES_HINTS: Record<AllArticlesFilter, string> = {
+    off: "Shows every story.",
+    score: "Hides stories scored below the threshold, in every feed.",
+    top: "Shows the day's best stories of all feeds together.",
+    each: "Uses each feed's own filter, then shows them together. Feeds with filtering off show every story.",
+};
+
+const READER_LAYOUTS: { mode: ReaderLayout; label: string }[] = [
+    { mode: "sheet", label: "Over the list" },
+    { mode: "page", label: "Instead of the list" },
+];
 
 export function SettingsModal({
     isOpen,
@@ -28,18 +106,22 @@ export function SettingsModal({
     triggerConfirm: (config: any) => void;
 }) {
     const {
-        filterPrediction,
-        setFilterPrediction,
-        filterPredictionThreshold,
-        setFilterPredictionThreshold,
+        allArticlesFilter,
+        setAllArticlesFilter,
+        scoreThreshold,
+        setScoreThreshold,
         useClusters,
         setUseClusters,
+        topPerDay,
+        setTopPerDay,
+        readerLayout,
+        setReaderLayout,
     } = useSettings();
 
     const [isAdmin, setIsAdmin] = useState(false);
     const [activeTab, setActiveTab] = useState<"general" | "admin">("general");
     const [localThreshold, setLocalThreshold] = useState(
-        filterPredictionThreshold.toString(),
+        scoreThreshold.toString(),
     );
 
     useEffect(() => {
@@ -55,20 +137,20 @@ export function SettingsModal({
 
     useEffect(() => {
         const currentLocalVal = parseFloat(localThreshold);
-        if (currentLocalVal !== filterPredictionThreshold) {
-            setLocalThreshold(filterPredictionThreshold.toString());
+        if (currentLocalVal !== scoreThreshold) {
+            setLocalThreshold(scoreThreshold.toString());
         }
-    }, [filterPredictionThreshold]);
+    }, [scoreThreshold]);
 
     const handleCommit = () => {
         let val = parseFloat(localThreshold);
         if (isNaN(val)) {
-            setLocalThreshold(filterPredictionThreshold.toString());
+            setLocalThreshold(scoreThreshold.toString());
             return;
         }
 
         val = Math.max(-1, Math.min(1, val));
-        setFilterPredictionThreshold(val);
+        setScoreThreshold(val);
         setLocalThreshold(val.toString());
     };
 
@@ -108,35 +190,23 @@ export function SettingsModal({
                 {activeTab === "general" ? (
                     <div className="space-y-6">
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                            <div className="space-y-3">
                                 <div>
                                     <h3 className="text-sm font-medium text-brand-950">
-                                        AI Filtering
+                                        All Articles filter
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Hide articles that are predicted to be
-                                        irrelevant.
+                                        {ALL_ARTICLES_HINTS[allArticlesFilter]}
                                     </p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={filterPrediction}
-                                        onChange={(e) =>
-                                            setFilterPrediction(
-                                                e.target.checked,
-                                            )
-                                        }
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
-                                </label>
-                            </div>
-
-                            {filterPrediction && (
-                                <div className="pl-4 border-l-2 border-brand-100">
+                                <Segmented
+                                    options={ALL_ARTICLES_FILTERS}
+                                    value={allArticlesFilter}
+                                    onChange={setAllArticlesFilter}
+                                />
+                                {allArticlesFilter === "score" && (
                                     <Input
-                                        label="Filtering Threshold"
+                                        label="Minimum score"
                                         type="number"
                                         step="0.1"
                                         min="-1"
@@ -153,9 +223,7 @@ export function SettingsModal({
                                                     val = -1;
                                                     valStr = "-1";
                                                 }
-                                                setFilterPredictionThreshold(
-                                                    val,
-                                                );
+                                                setScoreThreshold(val);
                                             }
                                             setLocalThreshold(valStr);
                                         }}
@@ -168,19 +236,44 @@ export function SettingsModal({
                                                 ).blur();
                                             }
                                         }}
-                                        helpText="Range: -1 to 1 (-1: definitely dislike, 1: definitely like). Values outside this range will be clamped."
+                                        helpText="Hides stories scored below this. Range: -1 to 1, where higher keeps more."
                                     />
-                                </div>
-                            )}
+                                )}
+                                {allArticlesFilter === "top" && (
+                                    <Input
+                                        label="Stories per day"
+                                        type="number"
+                                        step="1"
+                                        min="1"
+                                        max={MAX_TOP_PER_DAY}
+                                        value={topPerDay}
+                                        onChange={(e) => {
+                                            const val = parseInt(
+                                                e.target.value,
+                                                10,
+                                            );
+                                            if (
+                                                val >= 1 &&
+                                                val <= MAX_TOP_PER_DAY
+                                            )
+                                                setTopPerDay(val);
+                                        }}
+                                        helpText="The day's best-scored stories, plus a few from lower down so the model learns what it would hide."
+                                    />
+                                )}
+                                <p className="text-xs text-gray-500">
+                                    Each feed sets its own filter from its
+                                    menu.
+                                </p>
+                            </div>
 
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h3 className="text-sm font-medium text-brand-950">
-                                        Article Clustering
+                                        Stories
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Group similar articles together into
-                                        clusters.
+                                        Group similar articles into one story.
                                     </p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -195,10 +288,33 @@ export function SettingsModal({
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                                 </label>
                             </div>
+
+                            <div className="space-y-2">
+                                <div>
+                                    <h3 className="text-sm font-medium text-brand-950">
+                                        Reader
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                        Where articles open. Every title opens
+                                        the reader.
+                                    </p>
+                                </div>
+                                <Segmented
+                                    options={READER_LAYOUTS}
+                                    value={readerLayout}
+                                    onChange={setReaderLayout}
+                                />
+                                <ReaderLayoutPicture layout={readerLayout} />
+                            </div>
+
+                            <LlmSettings />
                         </div>
                     </div>
                 ) : (
-                    <AdminCodesView triggerConfirm={triggerConfirm} />
+                    <div className="space-y-8">
+                        <AdminLlmUsers />
+                        <AdminCodesView triggerConfirm={triggerConfirm} />
+                    </div>
                 )}
             </div>
         </Modal>
