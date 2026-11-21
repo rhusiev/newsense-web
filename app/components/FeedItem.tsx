@@ -155,7 +155,6 @@ export function FeedItem({
                 onClose={() => setMenuOpen(false)}
                 position={menuCoords}
                 feed={feed}
-                type={type}
                 isSubscribed={isSubscribed}
                 onAction={onAction}
             />

@@ -16,7 +16,6 @@ interface FeedItemMenuProps {
     onClose: () => void;
     position: { top: number; left: number };
     feed: Feed;
-    type?: "subscribed" | "owned" | "public";
     isSubscribed?: boolean;
     onAction: (action: string, feed: Feed) => void;
 }
