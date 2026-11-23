@@ -8,13 +8,13 @@ import {
 } from "react";
 import { Loader2 } from "lucide-react";
 import { api } from "~/lib/api";
-import type { Item, Cluster } from "~/lib/types";
+import type { Item, Cluster, Feed } from "~/lib/types";
 import { useSettings } from "~/lib/settings-context";
 import {
     NEW_FEED_FILTER_GRACE_DAYS,
     NEW_FEED_FILTER_GRACE_READS,
 } from "~/lib/constants";
-import { isWithinDays } from "~/lib/utils";
+import { isWithinDays, browserTimeZone } from "~/lib/utils";
 import { ArticleItem } from "./ArticleItem";
 import { ClusterItem } from "./ClusterItem";
 import { EmptyState } from "./ui/EmptyState";
@@ -25,6 +25,7 @@ interface ArticleListProps {
     refreshKey: number;
     feedMap: Map<string, string>;
     onItemRead: () => void;
+    onMarkRead: (feed: Feed) => void;
     triggerConfirm: (config: any) => void;
     onError: (msg: string) => void;
     externalUnreadOnly?: boolean;
@@ -39,6 +40,7 @@ export function ArticleList({
     refreshKey,
     feedMap,
     onItemRead,
+    onMarkRead,
     triggerConfirm,
     onError,
     externalUnreadOnly,
@@ -47,26 +49,54 @@ export function ArticleList({
     showSidebarToggle = false,
     onSidebarToggle,
 }: ArticleListProps) {
-    const { filterPrediction, filterPredictionThreshold, useClusters } =
-        useSettings();
+    const {
+        allArticlesFilter,
+        scoreThreshold,
+        useClusters,
+        topPerDay,
+        feedFilters,
+    } = useSettings();
 
+    // A feed applies its own filter; All Articles applies the Settings choice.
     // A feed the model has barely seen scores its articles badly, so filtering
     // would leave it looking empty. Stay exempt until the feed is both old
     // enough and read enough for the scores to be worth anything.
-    const scoreMin = useMemo(() => {
-        if (!filterPrediction) return undefined;
-        // "all" is synthetic and carries no history of its own, so it never qualifies.
-        if (feed?.id === "all") return filterPredictionThreshold;
-        const stillNew =
-            isWithinDays(feed?.created_at, NEW_FEED_FILTER_GRACE_DAYS) ||
-            (feed?.read_count ?? 0) < NEW_FEED_FILTER_GRACE_READS;
-        return stillNew ? undefined : filterPredictionThreshold;
+    const filterParams = useMemo(() => {
+        if (!feed) return {};
+        if (feed.id !== "all") {
+            const filter = feedFilters[feed.id];
+            if (!filter || filter.mode === "off") return {};
+            const stillNew =
+                isWithinDays(feed.created_at, NEW_FEED_FILTER_GRACE_DAYS) ||
+                (feed.read_count ?? 0) < NEW_FEED_FILTER_GRACE_READS;
+            if (stillNew) return {};
+            if (filter.mode === "score") {
+                return { score_min: filter.score_threshold ?? scoreThreshold };
+            }
+            return { top_n: filter.top_n ?? topPerDay, tz: browserTimeZone() };
+        }
+        switch (allArticlesFilter) {
+            case "off":
+                return {};
+            case "score":
+                return { score_min: scoreThreshold };
+            case "top":
+                return { top_n: topPerDay, tz: browserTimeZone() };
+            case "each":
+                return {
+                    top_n: topPerDay,
+                    tz: browserTimeZone(),
+                    per_feed: true,
+                };
+        }
     }, [
         feed?.id,
         feed?.created_at,
         feed?.read_count,
-        filterPrediction,
-        filterPredictionThreshold,
+        allArticlesFilter,
+        scoreThreshold,
+        topPerDay,
+        feedFilters,
     ]);
 
     const [localUnreadOnly, setLocalUnreadOnly] = useState(false);
@@ -104,7 +134,7 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
-                score_min: scoreMin,
+                ...filterParams,
             };
 
             if (useClusters) {
@@ -138,7 +168,7 @@ export function ArticleList({
         } finally {
             setLoading(false);
         }
-    }, [feed, unreadOnly, onError, useClusters, scoreMin]);
+    }, [feed, unreadOnly, onError, useClusters, filterParams]);
 
     const loadMore = async () => {
         if (
@@ -163,7 +193,7 @@ export function ArticleList({
                 limit: 20,
                 before: cursor || undefined,
                 unread_only: unreadOnly,
-                score_min: scoreMin,
+                ...filterParams,
             };
 
             if (useClusters) {
@@ -235,7 +265,7 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
-                score_min: scoreMin,
+                ...filterParams,
             };
 
             if (useClusters) {
@@ -284,7 +314,7 @@ export function ArticleList({
 
     const handleUpdateItemStatus = async (
         itemId: string,
-        updates: { is_read?: boolean; liked?: number },
+        updates: { is_read?: boolean; liked?: number | null },
     ) => {
         try {
             await api.updateItemStatus(itemId, updates);
@@ -319,7 +349,7 @@ export function ArticleList({
 
     const handleUpdateClusterStatus = async (
         clusterId: string,
-        updates: { is_read?: boolean; liked?: number },
+        updates: { is_read?: boolean; liked?: number | null },
     ) => {
         try {
             await api.updateClusterStatus(clusterId, updates);
@@ -338,12 +368,12 @@ export function ArticleList({
             );
             if (updates.is_read !== undefined) onItemRead();
         } catch (e) {
-            onError("Failed to update cluster status");
+            onError("Failed to update story status");
         }
     };
 
     const handleLikeToggleItem = async (item: Item, value: number) => {
-        const newValue = item.liked === value ? 0 : value;
+        const newValue = item.liked === value ? null : value;
         await handleUpdateItemStatus(item.id, {
             liked: newValue,
             is_read: true,
@@ -367,11 +397,7 @@ export function ArticleList({
                 onSync={handleSync}
                 unreadOnly={unreadOnly}
                 setUnreadOnly={setUnreadOnly}
-                triggerConfirm={triggerConfirm}
-                onError={onError}
-                loadItems={loadItems}
-                onItemRead={onItemRead}
-                useClusters={useClusters}
+                onMarkRead={() => feed && onMarkRead(feed)}
             />
 
             <div
@@ -384,6 +410,7 @@ export function ArticleList({
                     </EmptyState>
                 ) : (
                     <>
+
                         {useClusters &&
                             clusters.map((cluster) => (
                                 <ClusterItem

@@ -17,6 +17,109 @@ import {
     Check,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { Segmented } from "~/components/ui/Segmented";
+import { LlmSettings } from "./LlmSettings";
+import { AdminLlmUsers } from "./AdminLlmUsers";
+import {
+    MAX_TOP_PER_DAY,
+    type AllArticlesFilter,
+    type ReaderLayout,
+} from "~/lib/constants";
+
+// Each layout is a clickable card. The "Over list" picture shows the article
+// panel laid over a visible, dimmed list; "Instead of" shows the list replaced.
+function ReaderLayoutCards({
+    layout,
+    onChange,
+}: {
+    layout: ReaderLayout;
+    onChange: (mode: ReaderLayout) => void;
+}) {
+    const lines = (count: number, dim = false) =>
+        Array.from({ length: count }, (_, i) => (
+            <div
+                key={i}
+                className={`h-1.5 rounded-full ${dim ? "bg-gray-200" : i % 3 === 0 ? "w-4/5 bg-brand-200" : "w-full bg-gray-200"}`}
+            />
+        ));
+    const cards: { mode: ReaderLayout; label: string; hint: string }[] = [
+        {
+            mode: "sheet",
+            label: "Over the list",
+            hint: "The list stays visible behind the article. Swipe or close to go back.",
+        },
+        {
+            mode: "page",
+            label: "Instead of the list",
+            hint: "The article replaces the list. Use Back to return.",
+        },
+    ];
+    return (
+        <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Reader layout">
+            {cards.map(({ mode, label, hint }) => {
+                const active = layout === mode;
+                return (
+                    <button
+                        key={mode}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => onChange(mode)}
+                        className={`text-left rounded-xl border-2 p-3 transition-all focus:outline-none focus:ring-2 focus:ring-brand-300 ${
+                            active
+                                ? "border-brand-500 bg-brand-50/60"
+                                : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                    >
+                        <div className="relative h-24 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 mb-2.5">
+                            {mode === "sheet" ? (
+                                <>
+                                    <div className="absolute inset-0 p-2 flex flex-col gap-1.5 opacity-50">
+                                        {lines(5, true)}
+                                    </div>
+                                    <div className="absolute inset-y-1 right-1 w-3/5 rounded-md border border-brand-300 bg-white shadow-lg p-2 flex flex-col gap-1.5">
+                                        {lines(4)}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="absolute inset-1 rounded-md border border-brand-300 bg-white p-2 flex flex-col gap-1.5">
+                                    {lines(5)}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span
+                                className={`w-3.5 h-3.5 shrink-0 rounded-full border-2 flex items-center justify-center ${
+                                    active ? "border-brand-600" : "border-gray-300"
+                                }`}
+                            >
+                                {active && <span className="w-1.5 h-1.5 rounded-full bg-brand-600" />}
+                            </span>
+                            <span className={`text-sm font-medium ${active ? "text-brand-900" : "text-gray-700"}`}>
+                                {label}
+                            </span>
+                        </div>
+                        <p className="mt-1 pl-5 text-[11px] leading-snug text-gray-500">{hint}</p>
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+const ALL_ARTICLES_FILTERS: { mode: AllArticlesFilter; label: string }[] = [
+    { mode: "off", label: "Off" },
+    { mode: "score", label: "Score" },
+    { mode: "top", label: "Top per day" },
+    { mode: "each", label: "Each feed's" },
+];
+
+const ALL_ARTICLES_HINTS: Record<AllArticlesFilter, string> = {
+    off: "Shows every story.",
+    score: "Hides stories scored below the threshold, in every feed.",
+    top: "Shows the day's best stories of all feeds together.",
+    each: "Uses each feed's own filter, then shows them together. Feeds with filtering off show every story.",
+};
 
 export function SettingsModal({
     isOpen,
@@ -28,47 +131,59 @@ export function SettingsModal({
     triggerConfirm: (config: any) => void;
 }) {
     const {
-        filterPrediction,
-        setFilterPrediction,
-        filterPredictionThreshold,
-        setFilterPredictionThreshold,
+        allArticlesFilter,
+        setAllArticlesFilter,
+        scoreThreshold,
+        setScoreThreshold,
         useClusters,
         setUseClusters,
+        topPerDay,
+        setTopPerDay,
+        readerLayout,
+        setReaderLayout,
     } = useSettings();
 
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(
+        () => sessionStorage.getItem("newsense-admin") === "1",
+    );
     const [activeTab, setActiveTab] = useState<"general" | "admin">("general");
     const [localThreshold, setLocalThreshold] = useState(
-        filterPredictionThreshold.toString(),
+        scoreThreshold.toString(),
     );
 
     useEffect(() => {
         if (isOpen) {
             api.checkAdmin()
-                .then(() => setIsAdmin(true))
+                .then(() => {
+                    setIsAdmin(true);
+                    sessionStorage.setItem("newsense-admin", "1");
+                })
                 .catch((err) => {
                     console.error("Admin check failed:", err);
-                    setIsAdmin(false);
+                    // A rate limit or network error must not hide a known admin tab.
+                    if (sessionStorage.getItem("newsense-admin") !== "1") {
+                        setIsAdmin(false);
+                    }
                 });
         }
     }, [isOpen]);
 
     useEffect(() => {
         const currentLocalVal = parseFloat(localThreshold);
-        if (currentLocalVal !== filterPredictionThreshold) {
-            setLocalThreshold(filterPredictionThreshold.toString());
+        if (currentLocalVal !== scoreThreshold) {
+            setLocalThreshold(scoreThreshold.toString());
         }
-    }, [filterPredictionThreshold]);
+    }, [scoreThreshold]);
 
     const handleCommit = () => {
         let val = parseFloat(localThreshold);
         if (isNaN(val)) {
-            setLocalThreshold(filterPredictionThreshold.toString());
+            setLocalThreshold(scoreThreshold.toString());
             return;
         }
 
         val = Math.max(-1, Math.min(1, val));
-        setFilterPredictionThreshold(val);
+        setScoreThreshold(val);
         setLocalThreshold(val.toString());
     };
 
@@ -77,66 +192,79 @@ export function SettingsModal({
             isOpen={isOpen}
             onClose={onClose}
             title={activeTab === "admin" ? "Admin Settings" : "Settings"}
-            maxWidth={activeTab === "admin" ? "max-w-4xl" : "max-w-md"}
+            maxWidth={activeTab === "admin" ? "max-w-4xl" : "max-w-2xl"}
         >
             {isAdmin && (
-                <div className="px-6 pt-4">
-                    <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
-                        <button
-                            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 font-medium text-sm
-                                ${activeTab === "general" ? "bg-white text-brand-900 shadow-sm border border-gray-200" : "text-gray-400 hover:text-gray-600"}
-                            `}
-                            onClick={() => setActiveTab("general")}
-                        >
-                            <Settings size={16} />
-                            <span>General</span>
-                        </button>
-                        <button
-                            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 font-medium text-sm
-                                ${activeTab === "admin" ? "bg-white text-brand-900 shadow-sm border border-gray-200" : "text-gray-400 hover:text-gray-600"}
-                            `}
-                            onClick={() => setActiveTab("admin")}
-                        >
-                            <Shield size={16} />
-                            <span>Admin</span>
-                        </button>
+                <div className="px-6 pt-2">
+                    <div
+                        role="tablist"
+                        aria-label="Settings sections"
+                        className="flex gap-6 border-b border-gray-200"
+                    >
+                        {(["general", "admin"] as const).map((tab) => {
+                            const active = activeTab === tab;
+                            return (
+                                <button
+                                    key={tab}
+                                    id={`settings-tab-${tab}`}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={active}
+                                    aria-controls={`settings-panel-${tab}`}
+                                    tabIndex={active ? 0 : -1}
+                                    onClick={() => setActiveTab(tab)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                                            e.preventDefault();
+                                            const next = tab === "general" ? "admin" : "general";
+                                            setActiveTab(next);
+                                            requestAnimationFrame(() => {
+                                                document.getElementById(`settings-tab-${next}`)?.focus();
+                                            });
+                                        }
+                                    }}
+                                    className={`flex items-center gap-2 px-1 pb-2.5 -mb-px border-b-2 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:rounded ${
+                                        active
+                                            ? "border-brand-600 text-brand-900"
+                                            : "border-transparent text-gray-500 hover:text-brand-800"
+                                    }`}
+                                >
+                                    {tab === "general" ? <Settings size={16} /> : <Shield size={16} />}
+                                    <span>{tab === "general" ? "General" : "Admin"}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             )}
 
-            <div className="p-6">
+            <div
+                className="p-6"
+                role="tabpanel"
+                id={`settings-panel-${activeTab}`}
+                aria-labelledby={`settings-tab-${activeTab}`}
+            >
                 {activeTab === "general" ? (
-                    <div className="space-y-6">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                    <div className="divide-y divide-gray-100">
+                        <div className="space-y-4 pb-6">
+                            <div className="space-y-3">
                                 <div>
-                                    <h3 className="text-sm font-medium text-brand-950">
-                                        AI Filtering
+                                    <h3 className="text-base font-semibold text-brand-950 tracking-tight">
+                                        All Articles filter
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Hide articles that are predicted to be
-                                        irrelevant.
+                                        {ALL_ARTICLES_HINTS[allArticlesFilter]}
                                     </p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={filterPrediction}
-                                        onChange={(e) =>
-                                            setFilterPrediction(
-                                                e.target.checked,
-                                            )
-                                        }
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
-                                </label>
-                            </div>
-
-                            {filterPrediction && (
-                                <div className="pl-4 border-l-2 border-brand-100">
+                                <Segmented
+                                    options={ALL_ARTICLES_FILTERS}
+                                    value={allArticlesFilter}
+                                    onChange={setAllArticlesFilter}
+                                />
+                                {allArticlesFilter === "score" && (
+                                 <div className="ml-3 pl-3 border-l-2 border-brand-100">
                                     <Input
-                                        label="Filtering Threshold"
+                                        label="Minimum score"
                                         type="number"
                                         step="0.1"
                                         min="-1"
@@ -153,9 +281,7 @@ export function SettingsModal({
                                                     val = -1;
                                                     valStr = "-1";
                                                 }
-                                                setFilterPredictionThreshold(
-                                                    val,
-                                                );
+                                                setScoreThreshold(val);
                                             }
                                             setLocalThreshold(valStr);
                                         }}
@@ -168,19 +294,47 @@ export function SettingsModal({
                                                 ).blur();
                                             }
                                         }}
-                                        helpText="Range: -1 to 1 (-1: definitely dislike, 1: definitely like). Values outside this range will be clamped."
+                                        helpText="Range: -1 to 1, where higher keeps more."
                                     />
-                                </div>
-                            )}
+                                 </div>
+                                )}
+                                {allArticlesFilter === "top" && (
+                                 <div className="ml-3 pl-3 border-l-2 border-brand-100">
+                                    <Input
+                                        label="Stories per day"
+                                        type="number"
+                                        step="1"
+                                        min="1"
+                                        max={MAX_TOP_PER_DAY}
+                                        value={topPerDay}
+                                        onChange={(e) => {
+                                            const val = parseInt(
+                                                e.target.value,
+                                                10,
+                                            );
+                                            if (
+                                                val >= 1 &&
+                                                val <= MAX_TOP_PER_DAY
+                                            )
+                                                setTopPerDay(val);
+                                        }}
+                                        helpText="The day's best-scored stories, plus a few from lower down so the model learns what it would hide."
+                                    />
+                                 </div>
+                                )}
+                                <p className="text-xs text-gray-500">
+                                    Each feed sets its own filter from its
+                                    menu.
+                                </p>
+                            </div>
 
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between pt-6">
                                 <div>
-                                    <h3 className="text-sm font-medium text-brand-950">
-                                        Article Clustering
+                                    <h3 className="text-base font-semibold text-brand-950 tracking-tight">
+                                        Stories
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Group similar articles together into
-                                        clusters.
+                                        Group matching articles into one story card.
                                     </p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -195,10 +349,32 @@ export function SettingsModal({
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
                                 </label>
                             </div>
+
+                            <div className="space-y-3 pt-6">
+                                <div>
+                                    <h3 className="text-base font-semibold text-brand-950 tracking-tight">
+                                        Reader
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                        How the article opens. Every title opens the reader.
+                                    </p>
+                                </div>
+                                <ReaderLayoutCards
+                                    layout={readerLayout}
+                                    onChange={setReaderLayout}
+                                />
+                            </div>
+
+                            <div className="pt-6">
+                                <LlmSettings />
+                            </div>
                         </div>
                     </div>
                 ) : (
-                    <AdminCodesView triggerConfirm={triggerConfirm} />
+                    <div className="space-y-8">
+                        <AdminLlmUsers />
+                        <AdminCodesView triggerConfirm={triggerConfirm} />
+                    </div>
                 )}
             </div>
         </Modal>
@@ -341,7 +517,7 @@ function AdminCodesView({
             <div className="flex flex-col md:flex-row gap-12">
                 <div className="flex-1 space-y-8">
                     <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                        <h4 className="text-sm font-semibold text-brand-950 tracking-tight border-b border-gray-200 pb-2">
                             Add Single Code
                         </h4>
                         <form
@@ -386,7 +562,7 @@ function AdminCodesView({
                     </div>
 
                     <div className="space-y-4 pt-4 border-gray-100">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                        <h4 className="text-sm font-semibold text-brand-950 tracking-tight border-b border-gray-200 pb-2">
                             Bulk Generation
                         </h4>
                         <div className="space-y-4">
@@ -433,13 +609,13 @@ function AdminCodesView({
 
                 <div className="flex-1 space-y-4">
                     <div className="flex items-start justify-between">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 flex-1 mr-4">
+                        <h4 className="text-sm font-semibold text-brand-950 tracking-tight border-b border-gray-200 pb-2 flex-1 mr-4">
                             Active Codes
                         </h4>
                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-surface-active rounded-full border border-brand-100 shrink-0">
                             <Hash size={12} className="text-brand-600" />
                             <span className="text-xs font-bold text-brand-900">
-                                {count}
+                                {count} active
                             </span>
                         </div>
                     </div>

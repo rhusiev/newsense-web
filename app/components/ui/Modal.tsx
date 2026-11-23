@@ -35,6 +35,9 @@ export function Modal({
                 onClick={onClose}
             />
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={title || "Dialog"}
                 className={`relative bg-white rounded-xl shadow-2xl w-full ${maxWidth} overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]`}
             >
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">

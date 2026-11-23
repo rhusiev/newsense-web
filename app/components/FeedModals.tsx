@@ -14,6 +14,21 @@ import { Button } from "~/components/ui/Button";
 import { Modal } from "~/components/ui/Modal";
 import { Input } from "~/components/ui/Input";
 import { Textarea } from "~/components/ui/Textarea";
+import { useSettings } from "~/lib/settings-context";
+import { MAX_TOP_PER_DAY, type FeedFilterMode } from "~/lib/constants";
+import { Segmented } from "~/components/ui/Segmented";
+
+const FEED_FILTER_MODES: { mode: FeedFilterMode; label: string }[] = [
+    { mode: "off", label: "Off" },
+    { mode: "score", label: "Score" },
+    { mode: "top", label: "Top per day" },
+];
+
+const FEED_FILTER_HINTS: Record<FeedFilterMode, string> = {
+    off: "Shows every article of this feed.",
+    score: "Hides this feed's articles scored below the threshold.",
+    top: "Keeps this feed's best stories each day.",
+};
 
 interface FeedInfoModalProps {
     feed: Feed | null;
@@ -52,7 +67,7 @@ export function FeedInfoModal({ feed, onClose }: FeedInfoModalProps) {
                             href={feed.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="break-all hover:text-[#587e5b] hover:underline"
+                            className="break-all hover:text-brand-accent hover:underline"
                         >
                             {feed.url}
                         </a>
@@ -122,6 +137,7 @@ export function FeedManageModal({
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [isPublic, setIsPublic] = useState(true);
+    const [fullText, setFullText] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -130,11 +146,13 @@ export function FeedManageModal({
                 setTitle(feed.title || "");
                 setDescription(feed.description || "");
                 setIsPublic(feed.is_public);
+                setFullText(feed.full_text ?? false);
                 setUrl(feed.url);
             } else {
                 setTitle("");
                 setDescription("");
                 setIsPublic(true);
+                setFullText(false);
                 setUrl("");
             }
         }
@@ -158,6 +176,7 @@ export function FeedManageModal({
                     title,
                     description,
                     is_public: isPublic,
+                    full_text: !isPublic && fullText,
                 });
             }
             onSuccess();
@@ -214,7 +233,7 @@ export function FeedManageModal({
                         id="isPublic"
                         checked={isPublic}
                         onChange={(e) => setIsPublic(e.target.checked)}
-                        className="w-4 h-4 text-[#587e5b] rounded border-gray-300 focus:ring-[#587e5b] cursor-pointer"
+                        className="w-4 h-4 text-brand-accent rounded border-gray-300 focus:ring-brand-accent cursor-pointer"
                     />
                     <label
                         htmlFor="isPublic"
@@ -223,6 +242,30 @@ export function FeedManageModal({
                         Make this feed public (visible in Discover)
                     </label>
                 </div>
+
+                {mode === "edit" && (
+                    <div className="flex items-start gap-3 p-1">
+                        <input
+                            type="checkbox"
+                            id="fullText"
+                            checked={!isPublic && fullText}
+                            disabled={isPublic}
+                            onChange={(e) => setFullText(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 text-brand-accent rounded border-gray-300 focus:ring-brand-accent cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <label
+                            htmlFor="fullText"
+                            className={`text-sm select-none ${isPublic ? "text-gray-400" : "text-gray-700 cursor-pointer"}`}
+                        >
+                            Fetch full articles to read here
+                            <span className="block text-xs text-gray-500">
+                                {isPublic
+                                    ? "Only for private feeds."
+                                    : "New articles from the last 48 hours. Images load when you tap them."}
+                            </span>
+                        </label>
+                    </div>
+                )}
 
                 <div className="pt-4 flex justify-end gap-3">
                     <Button type="button" variant="ghost" onClick={onClose}>
@@ -233,6 +276,179 @@ export function FeedManageModal({
                     </Button>
                 </div>
             </form>
+        </Modal>
+    );
+}
+
+// Local date and time for a datetime-local input, which has no time zone.
+function localDateTime(): string {
+    const now = new Date();
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+}
+
+// Marks everything before a date, not just the filtered list.
+export function MarkReadModal({
+    feed,
+    onClose,
+    onDone,
+}: {
+    feed: Feed | null;
+    onClose: () => void;
+    onDone: () => void;
+}) {
+    const [date, setDate] = useState(localDateTime);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+
+    const save = async () => {
+        setSaving(true);
+        setError("");
+        try {
+            const since = "1970-01-01T00:00:00Z";
+            const before = new Date(date || localDateTime()).toISOString();
+            if (feed) await api.markFeedRead(feed.id, since, before);
+            else await api.markAllRead(since, before);
+            onDone();
+            onClose();
+        } catch (e: any) {
+            setError(e.message || "Could not mark articles as read.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Modal isOpen onClose={onClose} title="Mark as read" maxWidth="max-w-sm">
+            <div className="p-6 space-y-4">
+                <p className="text-sm text-gray-600">
+                    {feed ? feed.title || "This feed" : "All your feeds"}
+                </p>
+                <Input
+                    label="Before date and time"
+                    type="datetime-local"
+                    lang="en-GB"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    helpText="Includes articles your filters hide. Change the time to reach later today."
+                />
+                {error && <p className="text-xs text-red-500">{error}</p>}
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        onClick={save}
+                        isLoading={saving}
+                    >
+                        Mark as read
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+// Sets this feed's own filter. It applies when the feed is opened and, in All
+// Articles under "Each feed's", to this feed's stories.
+export function FeedFilterModal({
+    feed,
+    onClose,
+}: {
+    feed: Feed | null;
+    onClose: () => void;
+}) {
+    const { feedFilters, scoreThreshold, topPerDay, setFeedFilter } = useSettings();
+    const current = feed ? feedFilters[feed.id] : undefined;
+    const [mode, setMode] = useState<FeedFilterMode>(current?.mode ?? "off");
+    const [score, setScore] = useState(
+        String(current?.score_threshold ?? scoreThreshold),
+    );
+    const [topN, setTopN] = useState(String(current?.top_n ?? topPerDay));
+
+    useEffect(() => {
+        if (!feed) return;
+        const filter = feedFilters[feed.id];
+        setMode(filter?.mode ?? "off");
+        setScore(String(filter?.score_threshold ?? scoreThreshold));
+        setTopN(String(filter?.top_n ?? topPerDay));
+    }, [feed?.id]);
+
+    if (!feed) return null;
+
+    const scoreValue = parseFloat(score);
+    const topValue = parseInt(topN, 10);
+    const scoreValid =
+        !Number.isNaN(scoreValue) && scoreValue >= -1 && scoreValue <= 1;
+    const topValid = topValue >= 1 && topValue <= MAX_TOP_PER_DAY;
+    const valid =
+        mode === "off" || (mode === "score" ? scoreValid : topValid);
+
+    const save = () => {
+        if (!valid) return;
+        setFeedFilter(feed.id, {
+            mode,
+            score_threshold: mode === "score" ? scoreValue : null,
+            top_n: mode === "top" ? topValue : null,
+        });
+        onClose();
+    };
+
+    return (
+        <Modal isOpen onClose={onClose} title="Filter" maxWidth="max-w-sm">
+            <div className="p-6 space-y-4">
+                <p className="text-sm text-gray-600">
+                    {feed.title || "Untitled Feed"}
+                </p>
+                <Segmented
+                    options={FEED_FILTER_MODES}
+                    value={mode}
+                    onChange={setMode}
+                />
+                <p className="text-xs text-gray-500">
+                    {FEED_FILTER_HINTS[mode]}
+                </p>
+                {mode === "score" && (
+                    <Input
+                        label="Minimum score"
+                        type="number"
+                        step="0.1"
+                        min="-1"
+                        max="1"
+                        value={score}
+                        onChange={(e) => setScore(e.target.value)}
+                        error={scoreValid ? undefined : "Use -1 to 1"}
+                        helpText="Range: -1 to 1, where higher keeps more."
+                    />
+                )}
+                {mode === "top" && (
+                    <Input
+                        label="Stories per day"
+                        type="number"
+                        step="1"
+                        min="1"
+                        max={MAX_TOP_PER_DAY}
+                        value={topN}
+                        onChange={(e) => setTopN(e.target.value)}
+                        error={topValid ? undefined : `Use 1 to ${MAX_TOP_PER_DAY}`}
+                    />
+                )}
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        onClick={save}
+                        disabled={!valid}
+                    >
+                        Save
+                    </Button>
+                </div>
+            </div>
         </Modal>
     );
 }

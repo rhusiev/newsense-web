@@ -1,5 +1,14 @@
 import { createPortal } from "react-dom";
-import { Plus, Minus, CheckCircle, Info, Edit, Trash2 } from "lucide-react";
+import {
+    Plus,
+    Minus,
+    CheckCircle,
+    Info,
+    Edit,
+    Trash2,
+    ListFilter,
+} from "lucide-react";
+import { useAuth } from "~/lib/auth-context";
 import type { Feed } from "~/lib/types";
 
 interface FeedItemMenuProps {
@@ -7,7 +16,6 @@ interface FeedItemMenuProps {
     onClose: () => void;
     position: { top: number; left: number };
     feed: Feed;
-    type: "subscribed" | "owned" | "public";
     isSubscribed?: boolean;
     onAction: (action: string, feed: Feed) => void;
 }
@@ -17,14 +25,15 @@ export function FeedItemMenu({
     onClose,
     position,
     feed,
-    type,
     isSubscribed,
     onAction,
 }: FeedItemMenuProps) {
+    const { user } = useAuth();
     if (!isOpen) return null;
 
     const isVirtual = feed.id === "all" || feed.id === "unread";
-    const alreadySubscribed = type === "subscribed" || isSubscribed;
+    const isOwner = Boolean(user && feed.owner_id === user.user_id);
+    const alreadySubscribed = Boolean(isOwner || isSubscribed);
 
     const handleMenuAction = (e: React.MouseEvent, action: string) => {
         e.stopPropagation();
@@ -87,7 +96,16 @@ export function FeedItemMenu({
                     </button>
                 )}
 
-                {type === "owned" && (
+                {!isVirtual && alreadySubscribed && (
+                    <button
+                        onClick={(e) => handleMenuAction(e, "filter")}
+                        className="flex w-full items-center gap-2 px-4 py-3 md:py-2.5 hover:bg-gray-50 active:bg-gray-100 text-left text-gray-800 font-medium transition-colors"
+                    >
+                        <ListFilter size={16} /> Filter
+                    </button>
+                )}
+
+                {isOwner && (
                     <>
                         <div className="h-px bg-gray-100 my-1" />
                         <button

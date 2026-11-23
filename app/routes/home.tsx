@@ -1,9 +1,15 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import { data } from "react-router";
 import { AuthProvider, useAuth } from "~/lib/auth-context";
 import { SettingsProvider, useSettings } from "~/lib/settings-context";
 import { BASE_URL, api } from "~/lib/api";
+import { browserTimeZone, isWithinDays } from "~/lib/utils";
+import {
+    NEW_FEED_FILTER_GRACE_DAYS,
+    NEW_FEED_FILTER_GRACE_READS,
+} from "~/lib/constants";
 import type { Feed } from "~/lib/types";
+import { FullTextFeedsContext } from "~/lib/full-text";
 import type { Route } from "./+types/home";
 import { MobileLayout } from "~/components/Home/MobileLayout";
 import { DesktopLayout } from "~/components/Home/DesktopLayout";
@@ -48,7 +54,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
 function HomeContent() {
     const { user, logout } = useAuth();
-    const { filterPrediction, filterPredictionThreshold } = useSettings();
+    const { allArticlesFilter, scoreThreshold, topPerDay, useClusters, feedFilters } =
+        useSettings();
 
     const [layoutMode, setLayoutMode] = useState<
         "loading" | "mobile" | "desktop"
@@ -103,6 +110,10 @@ function HomeContent() {
         feed?: Feed | null;
     }>({ open: false, mode: "create" });
     const [infoModalFeed, setInfoModalFeed] = useState<Feed | null>(null);
+    const [filterModalFeed, setFilterModalFeed] = useState<Feed | null>(null);
+    const [markReadModal, setMarkReadModal] = useState<{
+        feed: Feed | null;
+    } | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState<{
         isOpen: boolean;
@@ -126,14 +137,11 @@ function HomeContent() {
             return;
         }
         try {
-            const params = filterPrediction
-                ? { score_min: filterPredictionThreshold }
-                : {};
-
+            const tz = browserTimeZone();
             const [subs, owns, counts] = await Promise.all([
                 api.getSubscribed(),
                 api.getOwned(),
-                api.getUnreadCounts(params),
+                api.getUnreadCounts(),
             ]);
 
             const withCounts = (feed: Feed) => {
@@ -147,17 +155,88 @@ function HomeContent() {
                 };
             };
 
-            const subsWithCounts = subs.map(withCounts);
-            const ownedWithCounts = owns.map(withCounts);
+            // A feed's badge follows the same filter as its list. A new feed is
+            // exempt until it is both old enough and read enough.
+            const feedBadge = async (feed: Feed) => {
+                const filter = feedFilters[feed.id];
+                if (!filter || filter.mode === "off") return feed.unread_count;
+                const stillNew =
+                    isWithinDays(
+                        feed.created_at,
+                        NEW_FEED_FILTER_GRACE_DAYS,
+                    ) ||
+                    (feed.read_count ?? 0) < NEW_FEED_FILTER_GRACE_READS;
+                if (stillNew) return feed.unread_count;
+                if (filter.mode === "score") {
+                    const r = await api.getFeedItemUnreadCount(feed.id, {
+                        score_min: filter.score_threshold ?? scoreThreshold,
+                    });
+                    return r.unread_count;
+                }
+                const topN = filter.top_n ?? topPerDay;
+                const r = useClusters
+                    ? await api.getFeedClusterUnreadCount(feed.id, {
+                          top_n: topN,
+                          tz,
+                      })
+                    : await api.getFeedItemUnreadCount(feed.id, {
+                          top_n: topN,
+                          tz,
+                      });
+                return r.unread_count;
+            };
+
+            const withFilteredCount = async (feed: Feed) => ({
+                ...feed,
+                unread_count: await feedBadge(feed),
+            });
+            const subsWithCounts = await Promise.all(
+                subs.map(withCounts).map(withFilteredCount),
+            );
+            const ownedWithCounts = await Promise.all(
+                owns.map(withCounts).map(withFilteredCount),
+            );
 
             setSubscribed(subsWithCounts);
             setOwned(ownedWithCounts);
-            setTotalUnread(counts.total_unread);
+
+            // The All Articles badge follows that list's own filter.
+            let allUnread = counts.total_unread;
+            if (allArticlesFilter === "score") {
+                allUnread = (
+                    await api.getUnreadCounts({
+                        score_min: scoreThreshold,
+                    })
+                ).total_unread;
+            } else if (
+                allArticlesFilter === "top" ||
+                allArticlesFilter === "each"
+            ) {
+                const ranked = {
+                    top_n: topPerDay,
+                    tz,
+                    per_feed: allArticlesFilter === "each",
+                };
+                allUnread = (
+                    useClusters
+                        ? await api.getClusterUnreadCount(ranked)
+                        : await api.getItemUnreadCount(ranked)
+                ).unread_count;
+            }
+            setTotalUnread(allUnread);
             setAllFeeds([...subsWithCounts, ...ownedWithCounts]);
         } catch (e) {
             console.error(e);
         }
-    }, [user, refreshKey, filterPrediction, filterPredictionThreshold]);
+    }, [
+        user,
+        refreshKey,
+        allArticlesFilter,
+        scoreThreshold,
+        topPerDay,
+        useClusters,
+        feedFilters,
+    ]);
 
     useEffect(() => {
         loadData();
@@ -172,6 +251,17 @@ function HomeContent() {
             setDesktopSidebarOpen(false);
         }
     }, [selectedFeed, isDesktopNarrow]);
+
+    // Feeds whose items open in the reader instead of the original site.
+    const fullTextFeeds = useMemo(
+        () => new Set(allFeeds.filter((f) => f.full_text).map((f) => f.id)),
+        [allFeeds],
+    );
+    const withFullText = (layout: ReactNode) => (
+        <FullTextFeedsContext.Provider value={fullTextFeeds}>
+            {layout}
+        </FullTextFeedsContext.Provider>
+    );
 
     const feedMap = useMemo(() => {
         const map = new Map<string, string>();
@@ -197,22 +287,7 @@ function HomeContent() {
                 });
                 break;
             case "mark_read":
-                triggerConfirm({
-                    title: "Mark as Read",
-                    message: `Mark all articles in "${feed.title}" as read?`,
-                    onConfirm: async () => {
-                        try {
-                            await api.markFeedRead(
-                                feed.id,
-                                "1970-01-01T00:00:00Z",
-                            );
-                            loadData();
-                            setRefreshKey((p) => p + 1);
-                        } catch (e: any) {
-                            setError(e.message);
-                        }
-                    },
-                });
+                setMarkReadModal({ feed: feed.id === "all" ? null : feed });
                 break;
             case "delete":
                 triggerConfirm({
@@ -235,6 +310,9 @@ function HomeContent() {
                 break;
             case "info":
                 setInfoModalFeed(feed);
+                break;
+            case "filter":
+                setFilterModalFeed(feed);
                 break;
             case "edit":
                 setManageModal({ open: true, mode: "edit", feed });
@@ -288,6 +366,10 @@ function HomeContent() {
         setManageModal,
         infoModalFeed,
         setInfoModalFeed,
+        filterModalFeed,
+        setFilterModalFeed,
+        markReadModal,
+        setMarkReadModal,
         settingsOpen,
         setSettingsOpen,
         confirmConfig,
@@ -305,7 +387,7 @@ function HomeContent() {
     if (layoutMode === "loading") return null;
 
     if (layoutMode === "mobile") {
-        return (
+        return withFullText(
             <MobileLayout
                 user={user}
                 mobileTab={mobileTab}
@@ -327,6 +409,11 @@ function HomeContent() {
                 triggerConfirm={triggerConfirm}
                 setError={setError}
                 onItemRead={loadData}
+                onMarkRead={(feed) =>
+                    setMarkReadModal({
+                        feed: feed.id === "all" ? null : feed,
+                    })
+                }
                 subscribed={subscribed}
                 getFilteredSubscribed={getFilteredSubscribed}
                 getFilteredOwned={getFilteredOwned}
@@ -335,7 +422,7 @@ function HomeContent() {
         );
     }
 
-    return (
+    return withFullText(
         <DesktopLayout
             user={user}
             isDesktopNarrow={isDesktopNarrow}
@@ -354,6 +441,9 @@ function HomeContent() {
             setManageModal={setManageModal}
             refreshKey={refreshKey}
             onItemRead={loadData}
+            onMarkRead={(feed) =>
+                setMarkReadModal({ feed: feed.id === "all" ? null : feed })
+            }
             feedMap={feedMap}
             setError={setError}
             modalProps={modalProps}
