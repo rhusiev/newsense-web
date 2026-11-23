@@ -317,10 +317,10 @@ export function SettingsModal({
                                 </p>
                             </div>
 
-                            <div className="flex items-center justify-between pl-3 border-l-2 border-brand-100">
+                            <div className="flex items-center justify-between pt-6">
                                 <div>
-                                    <h3 className="text-sm font-medium text-brand-950">
-                                        Group into stories
+                                    <h3 className="text-base font-semibold text-brand-950 tracking-tight">
+                                        Stories
                                     </h3>
                                     <p className="text-xs text-gray-500">
                                         Group matching articles into one story card.
@@ -506,7 +506,7 @@ function AdminCodesView({
             <div className="flex flex-col md:flex-row gap-12">
                 <div className="flex-1 space-y-8">
                     <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                        <h4 className="text-sm font-semibold text-brand-950 tracking-tight border-b border-gray-200 pb-2">
                             Add Single Code
                         </h4>
                         <form
@@ -551,7 +551,7 @@ function AdminCodesView({
                     </div>
 
                     <div className="space-y-4 pt-4 border-gray-100">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                        <h4 className="text-sm font-semibold text-brand-950 tracking-tight border-b border-gray-200 pb-2">
                             Bulk Generation
                         </h4>
                         <div className="space-y-4">
@@ -598,7 +598,7 @@ function AdminCodesView({
 
                 <div className="flex-1 space-y-4">
                     <div className="flex items-start justify-between">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 flex-1 mr-4">
+                        <h4 className="text-sm font-semibold text-brand-950 tracking-tight border-b border-gray-200 pb-2 flex-1 mr-4">
                             Active Codes
                         </h4>
                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-surface-active rounded-full border border-brand-100 shrink-0">

@@ -102,7 +102,7 @@ export function LlmSettings() {
             <div className="ml-3 pl-3 border-l-2 border-brand-100">
                 <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                        <p className="text-xs font-medium uppercase tracking-wide text-brand-900">Your own model</p>
+                        <p className="text-sm font-medium text-brand-900">Your own model</p>
                         <p className="text-[10px] text-gray-400 truncate">
                             {key?.configured
                                 ? `${key.base_url} · ${key.model}`
