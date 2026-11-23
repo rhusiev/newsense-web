@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { api } from "~/lib/api";
 
 interface LlmUser {
@@ -11,11 +12,14 @@ interface LlmUser {
 const MIN_LIMIT = 1;
 const MAX_LIMIT = 10000;
 const SAVE_DELAY_MS = 400;
+const PAGE_SIZE = 8;
 
 /** Admin list of who may use summaries and each user's daily limit. */
 export function AdminLlmUsers() {
     const [users, setUsers] = useState<LlmUser[]>([]);
     const [error, setError] = useState("");
+    const [query, setQuery] = useState("");
+    const [page, setPage] = useState(0);
     const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     useEffect(() => {
@@ -26,6 +30,22 @@ export function AdminLlmUsers() {
             Object.values(timers.current).forEach(clearTimeout);
         };
     }, []);
+
+    const filtered = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        return q
+            ? users.filter((u) => u.username.toLowerCase().includes(q))
+            : users;
+    }, [users, query]);
+
+    const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const current = Math.min(page, pages - 1);
+    const visible = filtered.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE);
+
+    const changeQuery = (value: string) => {
+        setQuery(value);
+        setPage(0);
+    };
 
     const save = async (user: LlmUser, patch: Partial<LlmUser>) => {
         try {
@@ -64,8 +84,19 @@ export function AdminLlmUsers() {
                 </p>
             </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
-            <div className="max-h-64 overflow-y-auto divide-y divide-gray-100 rounded-lg border border-gray-100">
-                {users.map((user) => (
+            <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => changeQuery(e.target.value)}
+                    placeholder="Search users"
+                    aria-label="Search users"
+                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                />
+            </div>
+            <div className="divide-y divide-gray-100 rounded-lg border border-gray-100">
+                {visible.map((user) => (
                     <div
                         key={user.id}
                         className="flex items-center gap-3 px-3 py-2 text-sm"
@@ -100,9 +131,41 @@ export function AdminLlmUsers() {
                         />
                     </div>
                 ))}
-                {!users.length && !error && (
-                    <p className="px-3 py-4 text-xs text-gray-400">No users.</p>
+                {!visible.length && !error && (
+                    <p className="px-3 py-4 text-xs text-gray-400">
+                        {query ? "No users match that search." : "No users."}
+                    </p>
                 )}
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>
+                    {filtered.length
+                        ? `${current * PAGE_SIZE + 1}-${Math.min((current + 1) * PAGE_SIZE, filtered.length)} of ${filtered.length}`
+                        : "0 users"}
+                </span>
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        disabled={current === 0}
+                        aria-label="Previous users"
+                        className="p-1.5 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+                    >
+                        <ChevronLeft size={14} />
+                    </button>
+                    <span className="px-2">
+                        Page {current + 1} of {pages}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
+                        disabled={current >= pages - 1}
+                        aria-label="Next users"
+                        className="p-1.5 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+                    >
+                        <ChevronRight size={14} />
+                    </button>
+                </div>
             </div>
         </div>
     );

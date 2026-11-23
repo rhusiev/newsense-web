@@ -26,53 +26,83 @@ import {
     type ReaderLayout,
 } from "~/lib/constants";
 
-// A small picture of each layout: the sheet leaves the list visible on the
-// left, the page replaces it. Only the chosen one is tinted.
-function ReaderLayoutPicture({ layout }: { layout: ReaderLayout }) {
-    const lines = (count: number) =>
+// Each layout is a clickable card. The "Over list" picture shows the article
+// panel laid over a visible, dimmed list; "Instead of" shows the list replaced.
+function ReaderLayoutCards({
+    layout,
+    onChange,
+}: {
+    layout: ReaderLayout;
+    onChange: (mode: ReaderLayout) => void;
+}) {
+    const lines = (count: number, dim = false) =>
         Array.from({ length: count }, (_, i) => (
             <div
                 key={i}
-                className={`h-1 rounded-full ${i % 3 === 0 ? "w-4/5 bg-brand-200" : "w-full bg-gray-200"}`}
+                className={`h-1.5 rounded-full ${dim ? "bg-gray-200" : i % 3 === 0 ? "w-4/5 bg-brand-200" : "w-full bg-gray-200"}`}
             />
         ));
+    const cards: { mode: ReaderLayout; label: string; hint: string }[] = [
+        {
+            mode: "sheet",
+            label: "Over the list",
+            hint: "The list stays visible behind the article. Swipe or close to go back.",
+        },
+        {
+            mode: "page",
+            label: "Instead of the list",
+            hint: "The article replaces the list. Use Back to return.",
+        },
+    ];
     return (
-        <div className="flex justify-center gap-6 py-1" aria-hidden="true">
-            {(["sheet", "page"] as const).map((mode) => (
-                <div key={mode} className="flex flex-col items-center gap-1.5">
-                    <div
-                        className={`w-24 h-16 rounded-lg border p-1.5 flex gap-1 ${
-                            layout === mode
-                                ? "border-brand-500 bg-brand-50"
-                                : "border-gray-200 bg-gray-50"
+        <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Reader layout">
+            {cards.map(({ mode, label, hint }) => {
+                const active = layout === mode;
+                return (
+                    <button
+                        key={mode}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => onChange(mode)}
+                        className={`text-left rounded-xl border-2 p-3 transition-all focus:outline-none focus:ring-2 focus:ring-brand-300 ${
+                            active
+                                ? "border-brand-500 bg-brand-50/60"
+                                : "border-gray-200 bg-white hover:border-gray-300"
                         }`}
                     >
-                        {mode === "sheet" ? (
-                            <>
-                                <div className="w-1/2 space-y-1.5 pt-1">
+                        <div className="relative h-24 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 mb-2.5">
+                            {mode === "sheet" ? (
+                                <>
+                                    <div className="absolute inset-0 p-2 flex flex-col gap-1.5 opacity-50">
+                                        {lines(5, true)}
+                                    </div>
+                                    <div className="absolute inset-y-1 right-1 w-3/5 rounded-md border border-brand-300 bg-white shadow-lg p-2 flex flex-col gap-1.5">
+                                        {lines(4)}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="absolute inset-1 rounded-md border border-brand-300 bg-white p-2 flex flex-col gap-1.5">
                                     {lines(5)}
                                 </div>
-                                <div className="w-1/2 rounded border border-gray-200 bg-white p-1.5 space-y-1.5">
-                                    {lines(4)}
-                                </div>
-                            </>
-                        ) : (
-                            <div className="w-full rounded border border-gray-200 bg-white p-1.5 space-y-1.5">
-                                {lines(5)}
-                            </div>
-                        )}
-                    </div>
-                    <span
-                        className={`text-[10px] ${
-                            layout === mode
-                                ? "text-brand-700 font-medium"
-                                : "text-gray-400"
-                        }`}
-                    >
-                        {mode === "sheet" ? "Over list" : "Full page"}
-                    </span>
-                </div>
-            ))}
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span
+                                className={`w-3.5 h-3.5 shrink-0 rounded-full border-2 flex items-center justify-center ${
+                                    active ? "border-brand-600" : "border-gray-300"
+                                }`}
+                            >
+                                {active && <span className="w-1.5 h-1.5 rounded-full bg-brand-600" />}
+                            </span>
+                            <span className={`text-sm font-medium ${active ? "text-brand-900" : "text-gray-700"}`}>
+                                {label}
+                            </span>
+                        </div>
+                        <p className="mt-1 pl-5 text-[11px] leading-snug text-gray-500">{hint}</p>
+                    </button>
+                );
+            })}
         </div>
     );
 }
@@ -90,11 +120,6 @@ const ALL_ARTICLES_HINTS: Record<AllArticlesFilter, string> = {
     top: "Shows the day's best stories of all feeds together.",
     each: "Uses each feed's own filter, then shows them together. Feeds with filtering off show every story.",
 };
-
-const READER_LAYOUTS: { mode: ReaderLayout; label: string }[] = [
-    { mode: "sheet", label: "Over the list" },
-    { mode: "page", label: "Instead of the list" },
-];
 
 export function SettingsModal({
     isOpen,
@@ -170,26 +195,39 @@ export function SettingsModal({
             maxWidth={activeTab === "admin" ? "max-w-4xl" : "max-w-2xl"}
         >
             {isAdmin && (
-                <div className="px-6 pt-4">
-                    <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
-                        <button
-                            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 font-medium text-sm
-                                ${activeTab === "general" ? "bg-white text-brand-900 shadow-sm border border-gray-200" : "text-gray-400 hover:text-gray-600"}
-                            `}
-                            onClick={() => setActiveTab("general")}
-                        >
-                            <Settings size={16} />
-                            <span>General</span>
-                        </button>
-                        <button
-                            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 font-medium text-sm
-                                ${activeTab === "admin" ? "bg-white text-brand-900 shadow-sm border border-gray-200" : "text-gray-400 hover:text-gray-600"}
-                            `}
-                            onClick={() => setActiveTab("admin")}
-                        >
-                            <Shield size={16} />
-                            <span>Admin</span>
-                        </button>
+                <div className="px-6 pt-2">
+                    <div
+                        role="tablist"
+                        aria-label="Settings sections"
+                        className="flex gap-6 border-b border-gray-200"
+                    >
+                        {(["general", "admin"] as const).map((tab) => {
+                            const active = activeTab === tab;
+                            return (
+                                <button
+                                    key={tab}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={active}
+                                    tabIndex={active ? 0 : -1}
+                                    onClick={() => setActiveTab(tab)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                                            e.preventDefault();
+                                            setActiveTab(tab === "general" ? "admin" : "general");
+                                        }
+                                    }}
+                                    className={`flex items-center gap-2 pb-2.5 -mb-px border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-300 rounded-sm ${
+                                        active
+                                            ? "border-brand-600 text-brand-900"
+                                            : "border-transparent text-gray-500 hover:text-brand-900 hover:border-gray-300"
+                                    }`}
+                                >
+                                    {tab === "general" ? <Settings size={16} /> : <Shield size={16} />}
+                                    <span>{tab === "general" ? "General" : "Admin"}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -307,12 +345,10 @@ export function SettingsModal({
                                         the reader.
                                     </p>
                                 </div>
-                                <Segmented
-                                    options={READER_LAYOUTS}
-                                    value={readerLayout}
+                                <ReaderLayoutCards
+                                    layout={readerLayout}
                                     onChange={setReaderLayout}
                                 />
-                                <ReaderLayoutPicture layout={readerLayout} />
                             </div>
 
                             <LlmSettings />
