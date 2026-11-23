@@ -106,7 +106,7 @@ function Article({
             <h1 className="font-serif text-3xl leading-tight text-slate-900 mb-6">
                 {item.title}
             </h1>
-            <StorySummary storyId={item.cluster_id} />
+            <StorySummary storyId={item.cluster_id ?? item.id} />
             {text.state === "loading" && <p className="text-slate-400">Loading...</p>}
             {text.state === "ready" && <Body html={text.html} />}
             {text.state === "summary" && (

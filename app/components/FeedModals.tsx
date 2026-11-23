@@ -67,7 +67,7 @@ export function FeedInfoModal({ feed, onClose }: FeedInfoModalProps) {
                             href={feed.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="break-all hover:text-[#587e5b] hover:underline"
+                            className="break-all hover:text-brand-accent hover:underline"
                         >
                             {feed.url}
                         </a>
@@ -233,7 +233,7 @@ export function FeedManageModal({
                         id="isPublic"
                         checked={isPublic}
                         onChange={(e) => setIsPublic(e.target.checked)}
-                        className="w-4 h-4 text-[#587e5b] rounded border-gray-300 focus:ring-[#587e5b] cursor-pointer"
+                        className="w-4 h-4 text-brand-accent rounded border-gray-300 focus:ring-brand-accent cursor-pointer"
                     />
                     <label
                         htmlFor="isPublic"
@@ -251,7 +251,7 @@ export function FeedManageModal({
                             checked={!isPublic && fullText}
                             disabled={isPublic}
                             onChange={(e) => setFullText(e.target.checked)}
-                            className="mt-0.5 w-4 h-4 text-[#587e5b] rounded border-gray-300 focus:ring-[#587e5b] cursor-pointer disabled:cursor-not-allowed"
+                            className="mt-0.5 w-4 h-4 text-brand-accent rounded border-gray-300 focus:ring-brand-accent cursor-pointer disabled:cursor-not-allowed"
                         />
                         <label
                             htmlFor="fullText"

@@ -206,15 +206,21 @@ export function SettingsModal({
                             return (
                                 <button
                                     key={tab}
+                                    id={`settings-tab-${tab}`}
                                     type="button"
                                     role="tab"
                                     aria-selected={active}
+                                    aria-controls={`settings-panel-${tab}`}
                                     tabIndex={active ? 0 : -1}
                                     onClick={() => setActiveTab(tab)}
                                     onKeyDown={(e) => {
                                         if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                                             e.preventDefault();
-                                            setActiveTab(tab === "general" ? "admin" : "general");
+                                            const next = tab === "general" ? "admin" : "general";
+                                            setActiveTab(next);
+                                            requestAnimationFrame(() => {
+                                                document.getElementById(`settings-tab-${next}`)?.focus();
+                                            });
                                         }
                                     }}
                                     className={`flex items-center gap-2 px-1 pb-2.5 -mb-px border-b-2 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:rounded ${
@@ -232,7 +238,12 @@ export function SettingsModal({
                 </div>
             )}
 
-            <div className="p-6">
+            <div
+                className="p-6"
+                role="tabpanel"
+                id={`settings-panel-${activeTab}`}
+                aria-labelledby={`settings-tab-${activeTab}`}
+            >
                 {activeTab === "general" ? (
                     <div className="divide-y divide-gray-100">
                         <div className="space-y-4 pb-6">

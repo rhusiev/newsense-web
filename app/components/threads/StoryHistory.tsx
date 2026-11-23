@@ -138,7 +138,10 @@ export function StoryHistory({
                     layout={readerLayout}
                     onClose={() => setReading(null)}
                     onRate={(value) => {
-                        api.updateItemStatus(reading.id, { liked: value }).catch(() => {});
+                        api.updateItemStatus(reading.id, {
+                            liked: reading.liked === value ? null : value,
+                            is_read: true,
+                        }).catch(() => {});
                     }}
                 />
             )}

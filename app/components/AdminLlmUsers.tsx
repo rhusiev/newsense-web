@@ -21,10 +21,15 @@ export function AdminLlmUsers() {
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(0);
     const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+    const pending = useRef<Record<string, Partial<LlmUser>>>({});
+    const saved = useRef<Record<string, LlmUser>>({});
 
     useEffect(() => {
         api.getLlmUsers()
-            .then((r: LlmUser[]) => setUsers(r))
+            .then((r: LlmUser[]) => {
+                setUsers(r);
+                r.forEach((u) => { saved.current[u.id] = u; });
+            })
             .catch(() => setError("Could not load users."));
         return () => {
             Object.values(timers.current).forEach(clearTimeout);
@@ -47,29 +52,47 @@ export function AdminLlmUsers() {
         setPage(0);
     };
 
-    const save = async (user: LlmUser, patch: Partial<LlmUser>) => {
+    const save = async (id: string) => {
+        const patch = pending.current[id] || {};
+        const base = saved.current[id];
+        delete pending.current[id];
+        if (!base || !Object.keys(patch).length) return;
+        const next = { ...base, ...patch } as LlmUser;
         try {
-            await api.setUserLlm(user.id, {
-                allowed: patch.llm_allowed ?? user.llm_allowed,
-                daily_limit: patch.llm_daily_limit ?? user.llm_daily_limit,
+            await api.setUserLlm(id, {
+                allowed: next.llm_allowed,
+                daily_limit: next.llm_daily_limit,
             });
+            saved.current[id] = next;
         } catch {
-            setUsers((list) => list.map((u) => (u.id === user.id ? user : u)));
+            setUsers((list) => list.map((u) => (u.id === id ? base : u)));
             setError("Could not save that change.");
         }
+    };
+
+    const flush = (id: string) => {
+        const timer = timers.current[id];
+        if (timer) {
+            clearTimeout(timer);
+            delete timers.current[id];
+        }
+        return save(id);
     };
 
     const update = (user: LlmUser, patch: Partial<LlmUser>, debounce = false) => {
         setUsers((list) =>
             list.map((u) => (u.id === user.id ? { ...u, ...patch } : u)),
         );
-        const timer = timers.current[user.id];
-        if (timer) clearTimeout(timer);
-        const apply = () => save(user, patch);
+        pending.current[user.id] = { ...(pending.current[user.id] || {}), ...patch };
         if (debounce) {
-            timers.current[user.id] = setTimeout(apply, SAVE_DELAY_MS);
+            const timer = timers.current[user.id];
+            if (timer) clearTimeout(timer);
+            timers.current[user.id] = setTimeout(() => {
+                delete timers.current[user.id];
+                save(user.id);
+            }, SAVE_DELAY_MS);
         } else {
-            apply();
+            flush(user.id);
         }
     };
 
