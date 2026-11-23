@@ -76,14 +76,19 @@ export function AdminLlmUsers() {
     return (
         <div className="space-y-3">
             <div>
-                <h3 className="text-sm font-medium text-brand-950">
+                <h3 className="text-base font-semibold text-brand-950 tracking-tight">
                     Summary access
                 </h3>
                 <p className="text-xs text-gray-500">
-                    Turn summaries on for a user or change their daily limit.
+                    Per-user control. This overrides the limit users see in General.
                 </p>
             </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
+            <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-3 text-[10px] uppercase tracking-wide text-gray-400">
+                <span>User</span>
+                <span>Allowed</span>
+                <span>Daily limit</span>
+            </div>
             <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input

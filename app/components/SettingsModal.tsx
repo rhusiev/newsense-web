@@ -217,10 +217,10 @@ export function SettingsModal({
                                             setActiveTab(tab === "general" ? "admin" : "general");
                                         }
                                     }}
-                                    className={`flex items-center gap-2 pb-2.5 -mb-px border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-300 rounded-sm ${
+                                    className={`flex items-center gap-2 px-1 pb-2.5 -mb-px border-b-2 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:rounded ${
                                         active
                                             ? "border-brand-600 text-brand-900"
-                                            : "border-transparent text-gray-500 hover:text-brand-900 hover:border-gray-300"
+                                            : "border-transparent text-gray-500 hover:text-brand-800"
                                     }`}
                                 >
                                     {tab === "general" ? <Settings size={16} /> : <Shield size={16} />}
@@ -234,11 +234,11 @@ export function SettingsModal({
 
             <div className="p-6">
                 {activeTab === "general" ? (
-                    <div className="space-y-6">
-                        <div className="space-y-4">
+                    <div className="divide-y divide-gray-100">
+                        <div className="space-y-4 pb-6">
                             <div className="space-y-3">
                                 <div>
-                                    <h3 className="text-sm font-medium text-brand-950">
+                                    <h3 className="text-base font-semibold text-brand-950 tracking-tight">
                                         All Articles filter
                                     </h3>
                                     <p className="text-xs text-gray-500">
@@ -251,6 +251,7 @@ export function SettingsModal({
                                     onChange={setAllArticlesFilter}
                                 />
                                 {allArticlesFilter === "score" && (
+                                 <div className="ml-3 pl-3 border-l-2 border-brand-100">
                                     <Input
                                         label="Minimum score"
                                         type="number"
@@ -282,10 +283,12 @@ export function SettingsModal({
                                                 ).blur();
                                             }
                                         }}
-                                        helpText="Hides stories scored below this. Range: -1 to 1, where higher keeps more."
+                                        helpText="Range: -1 to 1, where higher keeps more."
                                     />
+                                 </div>
                                 )}
                                 {allArticlesFilter === "top" && (
+                                 <div className="ml-3 pl-3 border-l-2 border-brand-100">
                                     <Input
                                         label="Stories per day"
                                         type="number"
@@ -306,6 +309,7 @@ export function SettingsModal({
                                         }}
                                         helpText="The day's best-scored stories, plus a few from lower down so the model learns what it would hide."
                                     />
+                                 </div>
                                 )}
                                 <p className="text-xs text-gray-500">
                                     Each feed sets its own filter from its
@@ -313,13 +317,13 @@ export function SettingsModal({
                                 </p>
                             </div>
 
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between pl-3 border-l-2 border-brand-100">
                                 <div>
                                     <h3 className="text-sm font-medium text-brand-950">
-                                        Stories
+                                        Group into stories
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Group similar articles into one story.
+                                        Group matching articles into one story card.
                                     </p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -335,14 +339,13 @@ export function SettingsModal({
                                 </label>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-3 pt-6">
                                 <div>
-                                    <h3 className="text-sm font-medium text-brand-950">
+                                    <h3 className="text-base font-semibold text-brand-950 tracking-tight">
                                         Reader
                                     </h3>
                                     <p className="text-xs text-gray-500">
-                                        Where articles open. Every title opens
-                                        the reader.
+                                        How the article opens. Every title opens the reader.
                                     </p>
                                 </div>
                                 <ReaderLayoutCards
@@ -351,7 +354,9 @@ export function SettingsModal({
                                 />
                             </div>
 
-                            <LlmSettings />
+                            <div className="pt-6">
+                                <LlmSettings />
+                            </div>
                         </div>
                     </div>
                 ) : (

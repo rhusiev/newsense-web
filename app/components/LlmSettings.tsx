@@ -67,40 +67,42 @@ export function LlmSettings() {
 
     return (
         <div className="space-y-3">
-            <div>
-                <h3 className="text-sm font-medium text-brand-950">
-                    Story summaries
-                </h3>
-                <p className="text-xs text-gray-500">
-                    A short summary of each story in your list, in the article language.
-                </p>
-            </div>
-            {llmAllowed ? (
-                <>
-                    <label className="flex items-center justify-between gap-3">
-                        <span className="text-sm text-brand-900">Turn on summaries</span>
+            <div className="flex items-center justify-between gap-3">
+                <div>
+                    <h3 className="text-base font-semibold text-brand-950 tracking-tight">
+                        Story summaries
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                        A short summary of each story in your list, in the article language.
+                    </p>
+                </div>
+                {llmAllowed && (
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                             type="checkbox"
                             className="sr-only peer"
                             checked={llmSummaries}
                             onChange={(e) => setLlmSummaries(e.target.checked)}
+                            aria-label="Turn on summaries"
                         />
-                        <span className="relative w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600" />
+                        <span className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600" />
                     </label>
-                    <p className="text-[10px] text-gray-400">
-                        {llmUsedToday} of {llmDailyLimit} used today
-                    </p>
-                </>
+                )}
+            </div>
+            {llmAllowed ? (
+                <p className="text-xs text-gray-500">
+                    {llmUsedToday} of {llmDailyLimit} used today
+                </p>
             ) : (
                 <p className="text-xs text-red-500">
                     Your administrator has turned summaries off.
                 </p>
             )}
 
-            <div className="pt-2 border-t border-gray-100">
+            <div className="ml-3 pl-3 border-l-2 border-brand-100">
                 <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                        <p className="text-sm text-brand-900">Your own model</p>
+                        <p className="text-xs font-medium uppercase tracking-wide text-brand-900">Your own model</p>
                         <p className="text-[10px] text-gray-400 truncate">
                             {key?.configured
                                 ? `${key.base_url} · ${key.model}`
