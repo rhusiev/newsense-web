@@ -604,7 +604,7 @@ function AdminCodesView({
                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-surface-active rounded-full border border-brand-100 shrink-0">
                             <Hash size={12} className="text-brand-600" />
                             <span className="text-xs font-bold text-brand-900">
-                                {count}
+                                {count} active
                             </span>
                         </div>
                     </div>
