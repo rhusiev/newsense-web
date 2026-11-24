@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Newsense">
+  <path d="M128 4 L171 50 L85 50 Z" fill="#ff5353" stroke="#0e3415" stroke-width="7" stroke-linejoin="round"/>
+  <circle cx="128" cy="146.5" r="105.5" fill="#deda5e" stroke="#0e3415" stroke-width="7"/>
+  <g fill="#0e3415">
+    <rect x="71" y="104" width="114" height="13" rx="6.5"/>
+    <rect x="71" y="140" width="114" height="13" rx="6.5"/>
+    <rect x="71" y="176" width="114" height="13" rx="6.5"/>
+  </g>
+</svg>

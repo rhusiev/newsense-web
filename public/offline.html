@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#eef8f1" />
+    <meta name="robots" content="noindex" />
+    <title>Offline · Newsense</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #eef8f1;
+        color: #0a2810;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(100%, 26rem);
+        text-align: center;
+      }
+
+      .mark {
+        display: block;
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.5rem;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+      }
+
+      p {
+        margin: 0 0 24px;
+        color: #3f5a45;
+        line-height: 1.5;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 20px;
+        border-radius: 10px;
+        background: #0e3415;
+        color: #ffffff;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .button:focus-visible {
+        outline: 3px solid #82cd97;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg class="mark" viewBox="0 0 256 256" aria-hidden="true">
+        <path d="M128 4 L171 50 L85 50 Z" fill="#ff5353" stroke="#0e3415" stroke-width="7" stroke-linejoin="round" />
+        <circle cx="128" cy="146.5" r="105.5" fill="#deda5e" stroke="#0e3415" stroke-width="7" />
+        <g fill="#0e3415">
+          <rect x="71" y="104" width="114" height="13" rx="6.5" />
+          <rect x="71" y="140" width="114" height="13" rx="6.5" />
+          <rect x="71" y="176" width="114" height="13" rx="6.5" />
+        </g>
+      </svg>
+      <h1>You're offline</h1>
+      <p>Newsense needs a connection in this version. Reconnect, then try again.</p>
+      <a class="button" href="/">Try again</a>
+    </main>
+  </body>
+</html>
