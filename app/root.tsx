@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -8,9 +9,17 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { registerServiceWorker } from "./lib/pwa";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
+  { rel: "manifest", href: "/manifest.webmanifest" },
+  { rel: "icon", href: "/favicon.ico", sizes: "any" },
+  {
+    rel: "apple-touch-icon",
+    href: "/icons/apple-touch-icon.png",
+    sizes: "180x180",
+  },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -24,11 +33,19 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Newsense" />
         <Meta />
         <Links />
       </head>
