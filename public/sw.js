@@ -8,7 +8,16 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.add(new Request(OFFLINE_URL, { cache: "reload" })))
+      .then((cache) =>
+        cache.add(
+          // Omit credentials so a signed-in response can never enter this cache.
+          // Do not set redirect: "error" here; it makes cache.add fail on install.
+          new Request(OFFLINE_URL, {
+            cache: "reload",
+            credentials: "omit",
+          }),
+        ),
+      )
       .then(() => self.skipWaiting()),
   );
 });
