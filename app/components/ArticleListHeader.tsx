@@ -1,4 +1,13 @@
-import { CheckCheck, RotateCw, Eye, EyeOff, PanelLeft } from "lucide-react";
+import {
+    ArrowDownWideNarrow,
+    ArrowUpWideNarrow,
+    CheckCheck,
+    RotateCw,
+    Eye,
+    EyeOff,
+    PanelLeft,
+} from "lucide-react";
+import { useSettings } from "~/lib/settings-context";
 import { Button } from "./ui/Button";
 
 interface ArticleListHeaderProps {
@@ -25,6 +34,8 @@ export function ArticleListHeader({
     onMarkRead,
 }: ArticleListHeaderProps) {
     const handleMarkAllRead = () => onMarkRead();
+    const { listOrder, setListOrder } = useSettings();
+    const oldest = listOrder === "oldest";
 
     return (
         <header
@@ -87,6 +98,26 @@ export function ArticleListHeader({
                 >
                     <CheckCheck size={18} className="sm:mr-2" />
                     <span className="hidden sm:inline">Mark Read</span>
+                </Button>
+
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        setListOrder(oldest ? "newest" : "oldest")
+                    }
+                    title={
+                        oldest
+                            ? "Oldest first - switch to newest first"
+                            : "Newest first - switch to oldest first"
+                    }
+                    aria-label={`Reading order: ${oldest ? "oldest" : "newest"} first. Switch to ${oldest ? "newest" : "oldest"} first`}
+                >
+                    {oldest ? (
+                        <ArrowUpWideNarrow size={18} className="mr-2" />
+                    ) : (
+                        <ArrowDownWideNarrow size={18} className="mr-2" />
+                    )}
+                    <span>{oldest ? "Oldest" : "Newest"}</span>
                 </Button>
             </div>
         </header>

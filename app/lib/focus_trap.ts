@@ -13,15 +13,19 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, enabled: boolea
         ref.current?.focus();
         const onKey = (event: KeyboardEvent) => {
             if (event.key !== "Tab" || !ref.current) return;
+            // getClientRects also counts position: fixed elements as shown.
             const items = [...ref.current.querySelectorAll<HTMLElement>(SELECTOR)]
-                .filter((item) => item.offsetParent !== null);
+                .filter((item) => item.getClientRects().length > 0);
             if (!items.length) return;
             const first = items[0];
             const last = items[items.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
+            const active = document.activeElement as HTMLElement | null;
+            // From the panel itself or from outside it, Tab enters at an end.
+            const outside = !active || !items.includes(active);
+            if (event.shiftKey && (outside || active === first)) {
                 event.preventDefault();
                 last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
+            } else if (!event.shiftKey && (outside || active === last)) {
                 event.preventDefault();
                 first.focus();
             }

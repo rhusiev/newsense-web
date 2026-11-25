@@ -3,7 +3,7 @@ import { Modal } from "./ui/Modal";
 import { useSettings } from "~/lib/settings-context";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
-import { api } from "~/lib/api";
+import { api, ApiError } from "~/lib/api";
 import type { AccessCode } from "~/lib/types";
 import {
     Settings,
@@ -21,6 +21,7 @@ import { Segmented } from "~/components/ui/Segmented";
 import { LlmSettings } from "./LlmSettings";
 import { AdminLlmUsers } from "./AdminLlmUsers";
 import {
+    ADMIN_SESSION_KEY,
     MAX_TOP_PER_DAY,
     type AllArticlesFilter,
     type ReaderLayout,
@@ -141,10 +142,11 @@ export function SettingsModal({
         setTopPerDay,
         readerLayout,
         setReaderLayout,
+        reloadSettings,
     } = useSettings();
 
     const [isAdmin, setIsAdmin] = useState(
-        () => sessionStorage.getItem("newsense-admin") === "1",
+        () => sessionStorage.getItem(ADMIN_SESSION_KEY) === "1",
     );
     const [activeTab, setActiveTab] = useState<"general" | "admin">("general");
     const [localThreshold, setLocalThreshold] = useState(
@@ -153,17 +155,21 @@ export function SettingsModal({
 
     useEffect(() => {
         if (isOpen) {
+            reloadSettings();
             api.checkAdmin()
                 .then(() => {
                     setIsAdmin(true);
-                    sessionStorage.setItem("newsense-admin", "1");
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
                 })
                 .catch((err) => {
-                    console.error("Admin check failed:", err);
-                    // A rate limit or network error must not hide a known admin tab.
-                    if (sessionStorage.getItem("newsense-admin") !== "1") {
+                    // A refusal hides the tab; a rate limit or outage keeps a known one.
+                    const refused =
+                        err instanceof ApiError && (err.status === 401 || err.status === 403);
+                    if (refused || sessionStorage.getItem(ADMIN_SESSION_KEY) !== "1") {
+                        sessionStorage.removeItem(ADMIN_SESSION_KEY);
                         setIsAdmin(false);
                     }
+                    if (!refused) console.error("Admin check failed:", err);
                 });
         }
     }, [isOpen]);

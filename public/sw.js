@@ -1,7 +1,8 @@
 // This worker only provides the public offline fallback. It never caches
 // authenticated HTML, API responses, or other same-origin requests.
 const CACHE_PREFIX = "newsense-offline-";
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+// The build replaces the placeholder with a hash of offline.html.
+const CACHE_NAME = `${CACHE_PREFIX}__OFFLINE_HASH__`;
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {

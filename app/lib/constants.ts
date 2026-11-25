@@ -1,3 +1,7 @@
+// One global order for every list view: newest-first or oldest-first.
+export type ListOrder = "newest" | "oldest";
+export const DEFAULT_LIST_ORDER: ListOrder = "newest";
+
 export const DEFAULT_USE_CLUSTERS = true;
 // The All Articles score filter's default. Also the starting value for a feed's own score filter.
 export const DEFAULT_SCORE_THRESHOLD = -0.7;
@@ -25,3 +29,8 @@ export const DEFAULT_READER_LAYOUT: ReaderLayout = "sheet";
 // filtering on them would just leave the feed looking empty.
 export const NEW_FEED_FILTER_GRACE_DAYS = 7;
 export const NEW_FEED_FILTER_GRACE_READS = 5;
+
+/** The signed-in user's settings, so the page shows them before the server answers. */
+export const SETTINGS_STORAGE_KEY = "newsense-settings";
+/** Set once the server confirmed the user is an admin, for this tab. */
+export const ADMIN_SESSION_KEY = "newsense-admin";

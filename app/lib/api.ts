@@ -1,3 +1,4 @@
+import type { ListOrder } from "./constants";
 import type {
     FeedFilter,
     StorySummaryStatus,
@@ -8,6 +9,16 @@ import type {
 const PROD_URL = import.meta.env.VITE_API_URL || "http://localhost";
 
 export const BASE_URL = import.meta.env.PROD ? PROD_URL : "http://localhost";
+
+/** A failed request, with the HTTP status so callers can tell a refusal from an outage. */
+export class ApiError extends Error {
+    constructor(
+        message: string,
+        readonly status: number,
+    ) {
+        super(message);
+    }
+}
 
 async function handleResponse(response: Response) {
     if (response.status === 204) return null;
@@ -20,7 +31,7 @@ async function handleResponse(response: Response) {
         } catch {
             if (response.status === 429) message = "Too many requests. Try again shortly.";
         }
-        throw new Error(message);
+        throw new ApiError(message, response.status);
     }
 
     const contentType = response.headers.get("content-type");
@@ -42,6 +53,40 @@ async function fetchClient(url: string, options: RequestInit = {}) {
 
     const response = await fetch(url, config);
     return handleResponse(response);
+}
+
+/** Paging and filter parameters shared by the item and story lists. */
+export interface ListParams {
+    before?: string;
+    after?: string;
+    /** Id of the last row shown; breaks ties with the date cursor. */
+    cursor_id?: string;
+    order?: ListOrder;
+    unread_only?: boolean;
+    limit?: number;
+    score_min?: number;
+    score_max?: number;
+    top_n?: number;
+    tz?: string;
+    per_feed?: boolean;
+}
+
+function listQuery(params: ListParams): URLSearchParams {
+    const query = new URLSearchParams();
+    if (params.before) query.append("before", params.before);
+    if (params.after) query.append("after", params.after);
+    if (params.cursor_id) query.append("cursor_id", params.cursor_id);
+    if (params.order) query.append("order", params.order);
+    if (params.unread_only) query.append("unread_only", "true");
+    if (params.limit) query.append("limit", params.limit.toString());
+    if (params.score_min !== undefined)
+        query.append("score_min", params.score_min.toString());
+    if (params.score_max !== undefined)
+        query.append("score_max", params.score_max.toString());
+    if (params.top_n !== undefined) query.append("top_n", params.top_n.toString());
+    if (params.tz) query.append("tz", params.tz);
+    if (params.per_feed) query.append("per_feed", "true");
+    return query;
 }
 
 export const api = {
@@ -161,60 +206,18 @@ export const api = {
 
     getFeedItems: (
         feedId: string,
-        params: {
-            before?: string;
-            unread_only?: boolean;
-            limit?: number;
-            score_min?: number;
-            score_max?: number;
-            top_n?: number;
-            tz?: string;
-            per_feed?: boolean;
-        } = {},
+        params: ListParams = {},
     ) => {
-        const query = new URLSearchParams();
-        if (params.before) query.append("before", params.before);
-        if (params.unread_only) query.append("unread_only", "true");
-        if (params.limit) query.append("limit", params.limit.toString());
-        if (params.score_min !== undefined)
-            query.append("score_min", params.score_min.toString());
-        if (params.score_max !== undefined)
-            query.append("score_max", params.score_max.toString());
-        if (params.top_n !== undefined)
-            query.append("top_n", params.top_n.toString());
-        if (params.tz) query.append("tz", params.tz);
-        if (params.per_feed) query.append("per_feed", "true");
-
+        const query = listQuery(params);
         return fetchClient(
             `${BASE_URL}/items/feed/${feedId}?${query.toString()}`,
         );
     },
 
     getAllItems: (
-        params: {
-            before?: string;
-            unread_only?: boolean;
-            limit?: number;
-            score_min?: number;
-            score_max?: number;
-            top_n?: number;
-            tz?: string;
-            per_feed?: boolean;
-        } = {},
+        params: ListParams = {},
     ) => {
-        const query = new URLSearchParams();
-        if (params.before) query.append("before", params.before);
-        if (params.unread_only) query.append("unread_only", "true");
-        if (params.limit) query.append("limit", params.limit.toString());
-        if (params.score_min !== undefined)
-            query.append("score_min", params.score_min.toString());
-        if (params.score_max !== undefined)
-            query.append("score_max", params.score_max.toString());
-        if (params.top_n !== undefined)
-            query.append("top_n", params.top_n.toString());
-        if (params.tz) query.append("tz", params.tz);
-        if (params.per_feed) query.append("per_feed", "true");
-
+        const query = listQuery(params);
         return fetchClient(`${BASE_URL}/items?${query.toString()}`);
     },
 
@@ -237,55 +240,17 @@ export const api = {
         fetchClient(`${BASE_URL}/items/${itemId}`),
 
     getGlobalClusters: (
-        params: {
-            before?: string;
-            unread_only?: boolean;
-            limit?: number;
-            score_min?: number;
-            score_max?: number;
-            top_n?: number;
-            tz?: string;
-            per_feed?: boolean;
-        } = {},
+        params: ListParams = {},
     ) => {
-        const query = new URLSearchParams();
-        if (params.before) query.append("before", params.before);
-        if (params.unread_only) query.append("unread_only", "true");
-        if (params.limit) query.append("limit", params.limit.toString());
-        if (params.score_min !== undefined)
-            query.append("score_min", params.score_min.toString());
-        if (params.score_max !== undefined)
-            query.append("score_max", params.score_max.toString());
-        if (params.top_n !== undefined)
-            query.append("top_n", params.top_n.toString());
-        if (params.tz) query.append("tz", params.tz);
-        if (params.per_feed) query.append("per_feed", "true");
+        const query = listQuery(params);
         return fetchClient(`${BASE_URL}/clusters?${query.toString()}`);
     },
 
     getFeedClusters: (
         feedId: string,
-        params: {
-            before?: string;
-            unread_only?: boolean;
-            limit?: number;
-            score_min?: number;
-            score_max?: number;
-            top_n?: number;
-            tz?: string;
-        } = {},
+        params: ListParams = {},
     ) => {
-        const query = new URLSearchParams();
-        if (params.before) query.append("before", params.before);
-        if (params.unread_only) query.append("unread_only", "true");
-        if (params.limit) query.append("limit", params.limit.toString());
-        if (params.score_min !== undefined)
-            query.append("score_min", params.score_min.toString());
-        if (params.score_max !== undefined)
-            query.append("score_max", params.score_max.toString());
-        if (params.top_n !== undefined)
-            query.append("top_n", params.top_n.toString());
-        if (params.tz) query.append("tz", params.tz);
+        const query = listQuery(params);
         return fetchClient(
             `${BASE_URL}/clusters/feed/${feedId}?${query.toString()}`,
         );

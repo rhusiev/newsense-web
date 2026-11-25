@@ -9,8 +9,11 @@ import {
     Eye,
     EyeOff,
     ArrowLeft,
+    ArrowDownWideNarrow,
+    ArrowUpWideNarrow,
     Plus,
 } from "lucide-react";
+import { useSettings } from "~/lib/settings-context";
 import { Button } from "~/components/ui/Button";
 import { LayoutList, Compass as CompassIcon } from "lucide-react";
 import type { User, Feed } from "~/lib/types";
@@ -60,6 +63,8 @@ export function MobileTopBar({
     const [isSearchActive, setIsSearchActive] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const { listOrder, setListOrder } = useSettings();
+    const oldest = listOrder === "oldest";
 
     useEffect(() => {
         if (isSearchActive && inputRef.current) {
@@ -175,7 +180,11 @@ export function MobileTopBar({
                 )}
             </div>
 
-            <div className="flex items-center justify-end w-16 gap-3 shrink-0">
+            {/* A feed's four actions size the group; the tabs keep the fixed
+                width that centers their title. */}
+            <div
+                className={`flex items-center justify-end shrink-0 ${selectedFeed ? "gap-2" : "w-16 gap-3"}`}
+            >
                 {selectedFeed ? (
                     <>
                         <Button
@@ -210,6 +219,25 @@ export function MobileTopBar({
                             title="Mark All Read"
                         >
                             <CheckCheck size={20} />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                                setListOrder(oldest ? "newest" : "oldest")
+                            }
+                            title={
+                                oldest
+                                    ? "Oldest first - switch to newest first"
+                                    : "Newest first - switch to oldest first"
+                            }
+                            aria-label={`Reading order: ${oldest ? "oldest" : "newest"} first. Switch to ${oldest ? "newest" : "oldest"} first`}
+                        >
+                            {oldest ? (
+                                <ArrowUpWideNarrow size={20} />
+                            ) : (
+                                <ArrowDownWideNarrow size={20} />
+                            )}
                         </Button>
                     </>
                 ) : (

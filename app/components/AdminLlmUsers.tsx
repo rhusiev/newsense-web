@@ -142,20 +142,12 @@ export function AdminLlmUsers() {
                             />
                             Allowed
                         </label>
-                        <input
-                            type="number"
-                            min={MIN_LIMIT}
-                            max={MAX_LIMIT}
+                        <LimitInput
                             value={user.llm_daily_limit}
-                            onChange={(e) => {
-                                const value = Math.min(
-                                    MAX_LIMIT,
-                                    Math.max(MIN_LIMIT, Number(e.target.value)),
-                                );
-                                update(user, { llm_daily_limit: value }, true);
-                            }}
-                            className="w-20 px-2 py-1 border border-gray-200 rounded text-xs"
-                            aria-label={`Daily limit for ${user.username}`}
+                            onChange={(value) =>
+                                update(user, { llm_daily_limit: value }, true)
+                            }
+                            label={`Daily limit for ${user.username}`}
                         />
                     </div>
                 ))}
@@ -196,5 +188,44 @@ export function AdminLlmUsers() {
                 </div>
             </div>
         </div>
+    );
+}
+
+/** Keeps the typed text while it is not a valid limit, and saves only whole
+ *  numbers in range, so clearing the field to retype does not save 1. */
+function LimitInput({
+    value,
+    onChange,
+    label,
+}: {
+    value: number;
+    onChange: (value: number) => void;
+    label: string;
+}) {
+    const [draft, setDraft] = useState(String(value));
+    useEffect(() => setDraft(String(value)), [value]);
+    return (
+        <input
+            type="number"
+            min={MIN_LIMIT}
+            max={MAX_LIMIT}
+            step={1}
+            value={draft}
+            onChange={(e) => {
+                setDraft(e.target.value);
+                const next = Number(e.target.value);
+                if (
+                    e.target.value !== "" &&
+                    Number.isInteger(next) &&
+                    next >= MIN_LIMIT &&
+                    next <= MAX_LIMIT
+                ) {
+                    onChange(next);
+                }
+            }}
+            onBlur={() => setDraft(String(value))}
+            className="w-20 px-2 py-1 border border-gray-200 rounded text-xs"
+            aria-label={label}
+        />
     );
 }

@@ -20,9 +20,17 @@ import { ClusterItem } from "./ClusterItem";
 import { EmptyState } from "./ui/EmptyState";
 import { ArticleListHeader } from "./ArticleListHeader";
 
+const PAGE_SIZE = 20;
+
+function uniqueById<T extends { id: string }>(rows: T[]): T[] {
+    const seen = new Set<string>();
+    return rows.filter((row) => !seen.has(row.id) && seen.add(row.id));
+}
+
 interface ArticleListProps {
     feed: any;
     refreshKey: number;
+    reloadKey: number;
     feedMap: Map<string, string>;
     onItemRead: () => void;
     onMarkRead: (feed: Feed) => void;
@@ -38,6 +46,7 @@ interface ArticleListProps {
 export function ArticleList({
     feed,
     refreshKey,
+    reloadKey,
     feedMap,
     onItemRead,
     onMarkRead,
@@ -55,6 +64,7 @@ export function ArticleList({
         useClusters,
         topPerDay,
         feedFilters,
+        listOrder,
     } = useSettings();
 
     // A feed applies its own filter; All Articles applies the Settings choice.
@@ -126,115 +136,80 @@ export function ArticleList({
         }
     }, [items, clusters]);
 
-    const loadItems = useCallback(async () => {
-        if (!feed) return;
-        setLoading(true);
-        setHasMore(true);
-        try {
+    // Each reload starts a new generation; a response from an older one (an
+    // earlier feed, filter or order) is dropped instead of mixed in.
+    const generation = useRef(0);
+
+    const fetchPage = useCallback(
+        async (cursor?: { at: string; id: string }) => {
             const params = {
-                limit: 20,
+                limit: PAGE_SIZE,
                 unread_only: unreadOnly,
+                order: listOrder,
+                ...(cursor && {
+                    [listOrder === "oldest" ? "after" : "before"]: cursor.at,
+                    cursor_id: cursor.id,
+                }),
                 ...filterParams,
             };
-
             if (useClusters) {
-                const data =
-                    feed.id === "all"
-                        ? await api.getGlobalClusters(params)
-                        : await api.getFeedClusters(feed.id, params);
-                const unique = data.filter(
-                    (c: Cluster, index: number, self: Cluster[]) =>
-                        index === self.findIndex((t) => t.id === c.id),
-                );
-                setClusters(unique);
-                setHasMore(data.length === 20);
-                setItems([]);
-            } else {
-                const data =
-                    feed.id === "all"
-                        ? await api.getAllItems(params)
-                        : await api.getFeedItems(feed.id, params);
-                const unique = data.filter(
-                    (i: Item, index: number, self: Item[]) =>
-                        index === self.findIndex((t) => t.id === i.id),
-                );
-                setItems(unique);
-                setHasMore(data.length === 20);
-                setClusters([]);
+                return feed.id === "all"
+                    ? api.getGlobalClusters(params)
+                    : api.getFeedClusters(feed.id, params);
             }
+            return feed.id === "all"
+                ? api.getAllItems(params)
+                : api.getFeedItems(feed.id, params);
+        },
+        [feed, unreadOnly, listOrder, filterParams, useClusters],
+    );
+
+    const loadItems = useCallback(async () => {
+        if (!feed) return;
+        const current = ++generation.current;
+        setLoading(true);
+        setHasMore(true);
+        setItems([]);
+        setClusters([]);
+        try {
+            const data = await fetchPage();
+            if (current !== generation.current) return;
+            if (useClusters) setClusters(uniqueById(data as Cluster[]));
+            else setItems(uniqueById(data as Item[]));
+            setHasMore(data.length === PAGE_SIZE);
         } catch (err: any) {
+            if (current !== generation.current) return;
             onError("Failed to load content.");
             console.error(err);
         } finally {
-            setLoading(false);
+            if (current === generation.current) setLoading(false);
         }
-    }, [feed, unreadOnly, onError, useClusters, filterParams]);
+    }, [feed, fetchPage, onError, useClusters]);
 
-    const loadMore = async () => {
-        if (
-            !feed ||
-            loadingMore ||
-            !hasMore ||
-            (items.length === 0 && clusters.length === 0)
-        )
-            return;
+    // Appends the page after the last row shown. The server pages by that
+    // row's date and id, the same key it sorts by, so nothing is skipped.
+    const loadMore = async (force = false) => {
+        const last = useClusters
+            ? clusters[clusters.length - 1]
+            : items[items.length - 1];
+        if (!feed || loadingMore || (!hasMore && !force) || !last) return;
+        const current = generation.current;
         setLoadingMore(true);
-
         try {
-            let cursor = "";
-            if (useClusters && clusters.length > 0) {
-                cursor = clusters[clusters.length - 1].sort_date;
-            } else if (!useClusters && items.length > 0) {
-                const lastItem = items[items.length - 1];
-                cursor = lastItem.published_at;
-            }
-
-            const params = {
-                limit: 20,
-                before: cursor || undefined,
-                unread_only: unreadOnly,
-                ...filterParams,
-            };
-
+            const at =
+                "sort_date" in last ? last.sort_date : last.published_at;
+            const data = await fetchPage({ at, id: last.id });
+            if (current !== generation.current) return;
             if (useClusters) {
-                const data =
-                    feed.id === "all"
-                        ? await api.getGlobalClusters(params)
-                        : await api.getFeedClusters(feed.id, params);
-
-                if (data.length === 0) {
-                    setHasMore(false);
-                } else {
-                    setClusters((prev) => {
-                        const existingIds = new Set(prev.map((c) => c.id));
-                        const unique = data.filter(
-                            (c: Cluster) => !existingIds.has(c.id),
-                        );
-                        return [...prev, ...unique];
-                    });
-                    if (data.length < 20) setHasMore(false);
-                }
+                setClusters((prev) => uniqueById([...prev, ...(data as Cluster[])]));
             } else {
-                const data =
-                    feed.id === "all"
-                        ? await api.getAllItems(params)
-                        : await api.getFeedItems(feed.id, params);
-
-                if (data.length === 0) {
-                    setHasMore(false);
-                } else {
-                    setItems((prev) => {
-                        const existingIds = new Set(prev.map((i) => i.id));
-                        const unique = data.filter(
-                            (i: Item) => !existingIds.has(i.id),
-                        );
-                        return [...prev, ...unique];
-                    });
-                    if (data.length < 20) setHasMore(false);
-                }
+                setItems((prev) => uniqueById([...prev, ...(data as Item[])]));
             }
+            setHasMore(data.length === PAGE_SIZE);
         } catch (err: any) {
-            onError(`Could not load more items: ${err.message}`);
+            if (current === generation.current) {
+                onError(`Could not load more items: ${err.message}`);
+            }
         } finally {
             setLoadingMore(false);
         }
@@ -258,55 +233,50 @@ export function ArticleList({
         return () => observer.disconnect();
     }, [hasMore, items, clusters, loading, loadingMore]);
 
+    // Newest-first: arrivals go on top and the reader keeps their place.
+    // Oldest-first: arrivals are the end of the list, so only a reader who
+    // has reached the end gets them; the others reach them by scrolling.
     const handleSync = async () => {
         if (!feed || isSyncing) return;
+        if (listOrder === "oldest") {
+            if (items.length === 0 && clusters.length === 0) {
+                await loadItems();
+            } else if (!hasMore) {
+                setIsSyncing(true);
+                await loadMore(true);
+                setIsSyncing(false);
+            }
+            return;
+        }
+        const current = generation.current;
         setIsSyncing(true);
         try {
-            const params = {
-                limit: 20,
-                unread_only: unreadOnly,
-                ...filterParams,
+            const data = await fetchPage();
+            if (current !== generation.current) return;
+            const keepPlace = () => {
+                if (scrollRef.current) {
+                    lastScrollHeight.current = scrollRef.current.scrollHeight;
+                }
             };
-
             if (useClusters) {
-                const data: Cluster[] =
-                    feed.id === "all"
-                        ? await api.getGlobalClusters(params)
-                        : await api.getFeedClusters(feed.id, params);
-
                 setClusters((prev) => {
-                    const existingIds = new Set(prev.map((c) => c.id));
-                    const unique = data.filter(
-                        (c) => !existingIds.has(c.id),
-                    );
-                    if (unique.length > 0 && scrollRef.current) {
-                        lastScrollHeight.current =
-                            scrollRef.current.scrollHeight;
-                        return [...unique, ...prev];
-                    }
-                    return prev;
+                    const seen = new Set(prev.map((c) => c.id));
+                    const fresh = (data as Cluster[]).filter((c) => !seen.has(c.id));
+                    if (fresh.length === 0) return prev;
+                    keepPlace();
+                    return [...fresh, ...prev];
                 });
             } else {
-                const data: Item[] =
-                    feed.id === "all"
-                        ? await api.getAllItems(params)
-                        : await api.getFeedItems(feed.id, params);
-
                 setItems((prev) => {
-                    const existingIds = new Set(prev.map((i) => i.id));
-                    const unique = data.filter(
-                        (i) => !existingIds.has(i.id),
-                    );
-                    if (unique.length > 0 && scrollRef.current) {
-                        lastScrollHeight.current =
-                            scrollRef.current.scrollHeight;
-                        return [...unique, ...prev];
-                    }
-                    return prev;
+                    const seen = new Set(prev.map((i) => i.id));
+                    const fresh = (data as Item[]).filter((i) => !seen.has(i.id));
+                    if (fresh.length === 0) return prev;
+                    keepPlace();
+                    return [...fresh, ...prev];
                 });
             }
         } catch (e) {
-            onError("Sync failed.");
+            if (current === generation.current) onError("Sync failed.");
         } finally {
             setIsSyncing(false);
         }
@@ -380,14 +350,43 @@ export function ArticleList({
         });
     };
 
+    // A change of feed, filter or order reloads from the start of the list.
     useEffect(() => {
         loadItems();
-    }, [loadItems, refreshKey]);
+    }, [loadItems]);
+
+    // A refresh asks for arrivals; a reload (after Mark Read or a feed change)
+    // shows the list again from its start, so read state is current.
+    const lastRefreshKey = useRef(refreshKey);
+    useEffect(() => {
+        if (refreshKey === lastRefreshKey.current) return;
+        lastRefreshKey.current = refreshKey;
+        handleSync();
+    }, [refreshKey]);
+
+    const lastReloadKey = useRef(reloadKey);
+    useEffect(() => {
+        if (reloadKey === lastReloadKey.current) return;
+        lastReloadKey.current = reloadKey;
+        loadItems();
+    }, [reloadKey]);
+
+    // The order buttons change their label; this tells a screen reader the
+    // list itself changed too. Nothing is announced on the first render.
+    const [orderNotice, setOrderNotice] = useState("");
+    const firstOrder = useRef(listOrder);
+    useEffect(() => {
+        if (listOrder === firstOrder.current && !orderNotice) return;
+        setOrderNotice(`Showing ${listOrder} articles first`);
+    }, [listOrder]);
 
     const isEmpty = useClusters ? clusters.length === 0 : items.length === 0;
 
     return (
         <div className="flex-1 h-full flex flex-col bg-brand-surface">
+            <span className="sr-only" aria-live="polite">
+                {orderNotice}
+            </span>
             <ArticleListHeader
                 feed={feed}
                 isMobile={isMobile}

@@ -1,6 +1,6 @@
 import { Check, Circle, Minus, ThumbsUp, ThumbsDown } from "lucide-react";
 import type { Item } from "~/lib/types";
-import { stripHtml } from "~/lib/utils";
+import { safeHref, stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
 import { useState } from "react";
 import { ArticleReader } from "./reader/ArticleReader";
@@ -52,7 +52,7 @@ export function ArticleItem({
 
                 <div className="flex-1 p-5">
                     <a
-                        href={item.link}
+                        href={safeHref(item.link)}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => {
