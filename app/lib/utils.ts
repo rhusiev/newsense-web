@@ -34,3 +34,15 @@ export function isWithinDays(
 export function browserTimeZone(): string {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
+
+/** The link when it is a web address, else undefined, so a feed cannot plant a
+ *  `javascript:` link. The server stores only http links; older rows may not be. */
+export function safeHref(link: string | undefined | null): string | undefined {
+    if (!link) return undefined;
+    try {
+        const { protocol } = new URL(link);
+        return protocol === "http:" || protocol === "https:" ? link : undefined;
+    } catch {
+        return undefined;
+    }
+}

@@ -12,7 +12,7 @@ import {
 import { api } from "~/lib/api";
 import type { Item } from "~/lib/types";
 import type { ReaderLayout } from "~/lib/constants";
-import { stripHtml } from "~/lib/utils";
+import { safeHref, stripHtml } from "~/lib/utils";
 import { useHasFullText } from "~/lib/full-text";
 import { ActionButton } from "../ui/ActionButton";
 import { StorySummary } from "./StorySummary";
@@ -69,11 +69,20 @@ function Body({ html }: { html: string }) {
                 ? `Show image: ${img.getAttribute("alt")}`
                 : "Show image";
             button.onclick = () => {
+                // The publisher learns of the reader only when an image loads;
+                // even then it is not told which site it is shown on.
+                img.setAttribute("referrerpolicy", "no-referrer");
                 img.setAttribute("src", img.getAttribute("data-src") ?? "");
                 img.removeAttribute("data-src");
                 button.replaceWith(img);
             };
             img.replaceWith(button);
+        });
+        // A link in the article must not replace the app, which matters most
+        // in the installed app that has no address bar.
+        root.querySelectorAll("a[href]").forEach((link) => {
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener noreferrer");
         });
     }, [html]);
 
@@ -117,7 +126,7 @@ function Article({
                         </p>
                     )}
                     <a
-                        href={item.link}
+                        href={safeHref(item.link)}
                         target="_blank"
                         rel="noreferrer"
                         className={VISIT_BUTTON}
@@ -147,7 +156,7 @@ function BottomBar({
                 <ActionButton icon={Minus} active={item.liked === 0} shouldFill={false} onClick={() => onRate(0)} title="Neutral" />
                 <ActionButton icon={ThumbsDown} active={item.liked === -1} onClick={() => onRate(-1)} title="Less like this" />
                 <a
-                    href={item.link}
+                    href={safeHref(item.link)}
                     target="_blank"
                     rel="noreferrer"
                     title="Open original"

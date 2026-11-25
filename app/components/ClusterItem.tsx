@@ -12,7 +12,7 @@ import {
     Shuffle,
 } from "lucide-react";
 import type { Cluster } from "~/lib/types";
-import { stripHtml } from "~/lib/utils";
+import { safeHref, stripHtml } from "~/lib/utils";
 import { ActionButton } from "./ui/ActionButton";
 import { ArticleReader } from "./reader/ArticleReader";
 import { StoryHistory } from "./threads/StoryHistory";
@@ -209,7 +209,7 @@ export function ClusterItem({
 
             <div className="mb-4">
                 <a
-                    href={activeItem.link}
+                    href={safeHref(activeItem.link)}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => {
@@ -415,7 +415,7 @@ function ItemMenuDropdown({
                         />
                         <div className="h-px bg-slate-100 my-1" />
                         <a
-                            href={activeItem.link}
+                            href={safeHref(activeItem.link)}
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-2 w-full px-2 py-2 text-slate-600 hover:bg-slate-50 rounded"

@@ -29,3 +29,8 @@ export const DEFAULT_READER_LAYOUT: ReaderLayout = "sheet";
 // filtering on them would just leave the feed looking empty.
 export const NEW_FEED_FILTER_GRACE_DAYS = 7;
 export const NEW_FEED_FILTER_GRACE_READS = 5;
+
+/** The signed-in user's settings, so the page shows them before the server answers. */
+export const SETTINGS_STORAGE_KEY = "newsense-settings";
+/** Set once the server confirmed the user is an admin, for this tab. */
+export const ADMIN_SESSION_KEY = "newsense-admin";

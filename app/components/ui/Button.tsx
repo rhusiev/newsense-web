@@ -35,6 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
         const internalRef = useRef<HTMLButtonElement>(null);
         const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+        const longPressed = useRef(false);
         const closeTimer = useRef<NodeJS.Timeout | null>(null);
 
         const baseStyles =
@@ -113,6 +114,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 }
 
                 setShowTooltip(true);
+                longPressed.current = true;
                 if (typeof navigator !== "undefined" && navigator.vibrate) {
                     navigator.vibrate(20);
                 }
@@ -122,6 +124,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         const handleTouchEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
             if (props.onTouchEnd) props.onTouchEnd(e);
             if (longPressTimer.current) clearTimeout(longPressTimer.current);
+            // A long press shows the tooltip; it must not also press the button.
+            if (longPressed.current) {
+                longPressed.current = false;
+                e.preventDefault();
+            }
 
             if (showTooltip) {
                 closeTimer.current = setTimeout(
@@ -132,6 +139,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         };
 
         const handleTouchMove = () => {
+            longPressed.current = false;
             if (longPressTimer.current) clearTimeout(longPressTimer.current);
             if (closeTimer.current) clearTimeout(closeTimer.current);
             setShowTooltip(false);

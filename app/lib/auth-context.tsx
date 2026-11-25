@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api } from "~/lib/api";
 import type { User } from "~/lib/types";
+import { ADMIN_SESSION_KEY, SETTINGS_STORAGE_KEY } from "~/lib/constants";
 import { useNavigate } from "react-router";
 
 interface AuthContextType {
@@ -54,6 +55,8 @@ export function AuthProvider({
 
     const logout = async () => {
         await api.logout();
+        localStorage.removeItem(SETTINGS_STORAGE_KEY);
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
         setUser(null);
         navigate("/");
     };
