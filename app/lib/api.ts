@@ -1,3 +1,4 @@
+import type { ListOrder } from "./constants";
 import type {
     FeedFilter,
     StorySummaryStatus,
@@ -163,6 +164,8 @@ export const api = {
         feedId: string,
         params: {
             before?: string;
+            after?: string;
+            order?: ListOrder;
             unread_only?: boolean;
             limit?: number;
             score_min?: number;
@@ -174,6 +177,8 @@ export const api = {
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
+        if (params.after) query.append("after", params.after);
+        if (params.order) query.append("order", params.order);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
         if (params.score_min !== undefined)
@@ -193,6 +198,8 @@ export const api = {
     getAllItems: (
         params: {
             before?: string;
+            after?: string;
+            order?: ListOrder;
             unread_only?: boolean;
             limit?: number;
             score_min?: number;
@@ -204,6 +211,8 @@ export const api = {
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
+        if (params.after) query.append("after", params.after);
+        if (params.order) query.append("order", params.order);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
         if (params.score_min !== undefined)
@@ -239,6 +248,8 @@ export const api = {
     getGlobalClusters: (
         params: {
             before?: string;
+            after?: string;
+            order?: ListOrder;
             unread_only?: boolean;
             limit?: number;
             score_min?: number;
@@ -250,6 +261,8 @@ export const api = {
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
+        if (params.after) query.append("after", params.after);
+        if (params.order) query.append("order", params.order);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
         if (params.score_min !== undefined)
@@ -267,6 +280,8 @@ export const api = {
         feedId: string,
         params: {
             before?: string;
+            after?: string;
+            order?: ListOrder;
             unread_only?: boolean;
             limit?: number;
             score_min?: number;
@@ -277,6 +292,8 @@ export const api = {
     ) => {
         const query = new URLSearchParams();
         if (params.before) query.append("before", params.before);
+        if (params.after) query.append("after", params.after);
+        if (params.order) query.append("order", params.order);
         if (params.unread_only) query.append("unread_only", "true");
         if (params.limit) query.append("limit", params.limit.toString());
         if (params.score_min !== undefined)

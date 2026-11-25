@@ -1,3 +1,7 @@
+// One global order for every list view: newest-first or oldest-first.
+export type ListOrder = "newest" | "oldest";
+export const DEFAULT_LIST_ORDER: ListOrder = "newest";
+
 export const DEFAULT_USE_CLUSTERS = true;
 // The All Articles score filter's default. Also the starting value for a feed's own score filter.
 export const DEFAULT_SCORE_THRESHOLD = -0.7;

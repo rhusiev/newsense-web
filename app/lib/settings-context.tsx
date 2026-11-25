@@ -11,11 +11,13 @@ import { useAuth } from "./auth-context";
 import type { FeedFilter } from "./types";
 import {
   DEFAULT_ALL_ARTICLES_FILTER,
+  DEFAULT_LIST_ORDER,
   DEFAULT_READER_LAYOUT,
   DEFAULT_SCORE_THRESHOLD,
   DEFAULT_TOP_PER_DAY,
   DEFAULT_USE_CLUSTERS,
   type AllArticlesFilter,
+  type ListOrder,
   type ReaderLayout,
 } from "./constants";
 
@@ -24,6 +26,7 @@ interface Settings {
   scoreThreshold: number;
   topPerDay: number;
   useClusters: boolean;
+  listOrder: ListOrder;
   readerLayout: ReaderLayout;
   llmSummaries: boolean;
   llmAllowed: boolean;
@@ -38,6 +41,7 @@ interface SettingsContextType extends Settings {
   setScoreThreshold: (value: number) => void;
   setTopPerDay: (value: number) => void;
   setUseClusters: (value: boolean) => void;
+  setListOrder: (value: ListOrder) => void;
   setReaderLayout: (value: ReaderLayout) => void;
   setLlmSummaries: (value: boolean) => void;
   setFeedFilter: (feedId: string, filter: FeedFilter) => void;
@@ -55,6 +59,7 @@ const DEFAULTS: Settings = {
   scoreThreshold: DEFAULT_SCORE_THRESHOLD,
   topPerDay: DEFAULT_TOP_PER_DAY,
   useClusters: DEFAULT_USE_CLUSTERS,
+  listOrder: DEFAULT_LIST_ORDER,
   readerLayout: DEFAULT_READER_LAYOUT,
   llmSummaries: false,
   llmAllowed: true,
@@ -68,6 +73,7 @@ type ServerSettings = {
   score_threshold: number;
   top_per_day: number;
   use_clusters: boolean;
+  list_order: ListOrder;
   reader_layout: ReaderLayout;
   llm_summaries: boolean;
   llm_allowed: boolean;
@@ -81,6 +87,7 @@ const fromServer = (s: ServerSettings): Settings => ({
   scoreThreshold: s.score_threshold,
   topPerDay: s.top_per_day,
   useClusters: s.use_clusters,
+  listOrder: s.list_order,
   readerLayout: s.reader_layout,
   llmSummaries: s.llm_summaries,
   llmAllowed: s.llm_allowed,
@@ -154,6 +161,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setScoreThreshold: (v) => save("scoreThreshold", v, { score_threshold: v }),
         setTopPerDay: (v) => save("topPerDay", v, { top_per_day: v }),
         setUseClusters: (v) => save("useClusters", v, { use_clusters: v }),
+        setListOrder: (v) => save("listOrder", v, { list_order: v }),
         setReaderLayout: (v) => save("readerLayout", v, { reader_layout: v }),
         setLlmSummaries: (v) => save("llmSummaries", v, { llm_summaries: v }),
         setFeedFilter,

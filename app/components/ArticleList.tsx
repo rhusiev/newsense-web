@@ -55,6 +55,7 @@ export function ArticleList({
         useClusters,
         topPerDay,
         feedFilters,
+        listOrder,
     } = useSettings();
 
     // A feed applies its own filter; All Articles applies the Settings choice.
@@ -134,6 +135,7 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
+                order: listOrder,
                 ...filterParams,
             };
 
@@ -147,7 +149,11 @@ export function ArticleList({
                         index === self.findIndex((t) => t.id === c.id),
                 );
                 setClusters(unique);
-                setHasMore(data.length === 20);
+                setHasMore(
+                    listOrder === "oldest"
+                        ? data.length > 0
+                        : data.length === 20,
+                );
                 setItems([]);
             } else {
                 const data =
@@ -159,7 +165,11 @@ export function ArticleList({
                         index === self.findIndex((t) => t.id === i.id),
                 );
                 setItems(unique);
-                setHasMore(data.length === 20);
+                setHasMore(
+                    listOrder === "oldest"
+                        ? data.length > 0
+                        : data.length === 20,
+                );
                 setClusters([]);
             }
         } catch (err: any) {
@@ -168,7 +178,7 @@ export function ArticleList({
         } finally {
             setLoading(false);
         }
-    }, [feed, unreadOnly, onError, useClusters, filterParams]);
+    }, [feed, unreadOnly, onError, useClusters, filterParams, listOrder]);
 
     const loadMore = async () => {
         if (
@@ -189,10 +199,17 @@ export function ArticleList({
                 cursor = lastItem.published_at;
             }
 
+            if (!cursor) {
+                setHasMore(false);
+                return;
+            }
             const params = {
                 limit: 20,
-                before: cursor || undefined,
+                order: listOrder,
                 unread_only: unreadOnly,
+                ...(listOrder === "oldest"
+                    ? { after: cursor }
+                    : { before: cursor }),
                 ...filterParams,
             };
 
@@ -212,7 +229,8 @@ export function ArticleList({
                         );
                         return [...prev, ...unique];
                     });
-                    if (data.length < 20) setHasMore(false);
+                    if (listOrder === "newest" && data.length < 20)
+                        setHasMore(false);
                 }
             } else {
                 const data =
@@ -230,7 +248,8 @@ export function ArticleList({
                         );
                         return [...prev, ...unique];
                     });
-                    if (data.length < 20) setHasMore(false);
+                    if (listOrder === "newest" && data.length < 20)
+                        setHasMore(false);
                 }
             }
         } catch (err: any) {
@@ -265,6 +284,9 @@ export function ArticleList({
             const params = {
                 limit: 20,
                 unread_only: unreadOnly,
+                // Arrivals are always fetched newest-first, then placed at the
+                // end of an oldest-first list.
+                order: "newest" as const,
                 ...filterParams,
             };
 
@@ -279,12 +301,13 @@ export function ArticleList({
                     const unique = data.filter(
                         (c) => !existingIds.has(c.id),
                     );
-                    if (unique.length > 0 && scrollRef.current) {
+                    if (unique.length === 0) return prev;
+                    if (listOrder === "oldest") return [...prev, ...unique];
+                    if (scrollRef.current) {
                         lastScrollHeight.current =
                             scrollRef.current.scrollHeight;
-                        return [...unique, ...prev];
                     }
-                    return prev;
+                    return [...unique, ...prev];
                 });
             } else {
                 const data: Item[] =
@@ -297,12 +320,15 @@ export function ArticleList({
                     const unique = data.filter(
                         (i) => !existingIds.has(i.id),
                     );
-                    if (unique.length > 0 && scrollRef.current) {
+                    if (unique.length === 0) return prev;
+                    if (listOrder === "oldest") {
+                        return [...prev, ...unique.reverse()];
+                    }
+                    if (scrollRef.current) {
                         lastScrollHeight.current =
                             scrollRef.current.scrollHeight;
-                        return [...unique, ...prev];
                     }
-                    return prev;
+                    return [...unique, ...prev];
                 });
             }
         } catch (e) {
@@ -380,9 +406,26 @@ export function ArticleList({
         });
     };
 
+    // A change of feed, filter or order reloads from the start of the list.
     useEffect(() => {
         loadItems();
-    }, [loadItems, refreshKey]);
+    }, [loadItems]);
+
+    // Refresh keeps the reader in place. In oldest-first order the arrivals go
+    // to the bottom instead of sending the reader back to the first page.
+    const lastRefreshKey = useRef(refreshKey);
+    useEffect(() => {
+        if (refreshKey === lastRefreshKey.current) return;
+        lastRefreshKey.current = refreshKey;
+        if (
+            listOrder === "oldest" &&
+            (items.length > 0 || clusters.length > 0)
+        ) {
+            handleSync();
+        } else {
+            loadItems();
+        }
+    }, [refreshKey]);
 
     const isEmpty = useClusters ? clusters.length === 0 : items.length === 0;
 
