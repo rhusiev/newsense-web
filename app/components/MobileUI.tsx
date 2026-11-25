@@ -180,7 +180,11 @@ export function MobileTopBar({
                 )}
             </div>
 
-            <div className="flex items-center justify-end gap-1 shrink-0">
+            {/* A feed's four actions size the group; the tabs keep the fixed
+                width that centers their title. */}
+            <div
+                className={`flex items-center justify-end shrink-0 ${selectedFeed ? "gap-2" : "w-16 gap-3"}`}
+            >
                 {selectedFeed ? (
                     <>
                         <Button

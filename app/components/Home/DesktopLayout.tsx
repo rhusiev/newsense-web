@@ -21,6 +21,7 @@ interface DesktopLayoutProps {
     setSettingsOpen: (val: boolean) => void;
     setManageModal: (val: any) => void;
     refreshKey: number;
+    reloadKey: number;
     onItemRead: () => void;
     onMarkRead: (feed: Feed) => void;
     feedMap: Map<string, string>;
@@ -45,6 +46,7 @@ export function DesktopLayout({
     setSettingsOpen,
     setManageModal,
     refreshKey,
+    reloadKey,
     onItemRead,
     onMarkRead,
     feedMap,
@@ -156,6 +158,7 @@ export function DesktopLayout({
                 <ArticleList
                     feed={selectedFeed}
                     refreshKey={refreshKey}
+                    reloadKey={reloadKey}
                     onItemRead={onItemRead}
                     onMarkRead={onMarkRead}
                     feedMap={feedMap}

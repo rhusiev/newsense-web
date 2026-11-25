@@ -92,6 +92,7 @@ function HomeContent() {
     const [totalUnread, setTotalUnread] = useState(0);
 
     const [refreshKey, setRefreshKey] = useState(0);
+    const [reloadKey, setReloadKey] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
     const [mobileTab, setMobileTab] = useState<
@@ -134,6 +135,8 @@ function HomeContent() {
         if (!user) {
             setSubscribed([]);
             setOwned([]);
+            setAllFeeds([]);
+            setTotalUnread(0);
             return;
         }
         try {
@@ -379,7 +382,7 @@ function HomeContent() {
         setError,
         onSuccess: () => {
             loadData();
-            setRefreshKey((p) => p + 1);
+            setReloadKey((p) => p + 1);
         },
         user,
     };
@@ -399,6 +402,7 @@ function HomeContent() {
                 unreadOnly={unreadOnly}
                 setUnreadOnly={setUnreadOnly}
                 refreshKey={refreshKey}
+                reloadKey={reloadKey}
                 setRefreshKey={setRefreshKey}
                 logout={logout}
                 setAuthModal={setAuthModal}
@@ -440,6 +444,7 @@ function HomeContent() {
             setSettingsOpen={setSettingsOpen}
             setManageModal={setManageModal}
             refreshKey={refreshKey}
+            reloadKey={reloadKey}
             onItemRead={loadData}
             onMarkRead={(feed) =>
                 setMarkReadModal({ feed: feed.id === "all" ? null : feed })

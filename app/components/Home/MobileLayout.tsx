@@ -16,6 +16,7 @@ interface MobileLayoutProps {
     unreadOnly: boolean;
     setUnreadOnly: (val: boolean) => void;
     refreshKey: number;
+    reloadKey: number;
     setRefreshKey: (cb: (p: number) => number) => void;
     logout: () => void;
     setAuthModal: (val: any) => void;
@@ -44,6 +45,7 @@ export function MobileLayout({
     unreadOnly,
     setUnreadOnly,
     refreshKey,
+    reloadKey,
     setRefreshKey,
     logout,
     setAuthModal,
@@ -92,6 +94,7 @@ export function MobileLayout({
                     <ArticleList
                         feed={selectedFeed}
                         refreshKey={refreshKey}
+                        reloadKey={reloadKey}
                         onItemRead={onItemRead}
                         onMarkRead={onMarkRead}
                         feedMap={feedMap}
